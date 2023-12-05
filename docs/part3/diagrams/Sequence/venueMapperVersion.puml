@@ -1,0 +1,18 @@
+@startuml sequenceDiagram
+  participant "eventLogic\n:EventLogic" as el
+  participant "vm\n:VenueMapper" as vm
+  database PostgreSQL as db
+
+  activate el
+    el->>vm: vm.updateVersion(venueID, venueVersion)
+    activate vm
+      vm->>db: UPDATE venues SET version = version + 1\n　　WHERE id = uuid(venueID) AND version = venueVersion;
+      activate db
+        db-->>vm: int updatedRows
+      deactivate db
+      alt if updatedRows == 0\n// i.e. if update failed due to venueVersion mismatch
+        vm-->>el: Exception
+      end
+    deactivate vm
+  deactivate el
+@enduml

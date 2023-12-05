@@ -1,0 +1,15 @@
+@startuml
+
+' hide the spot
+hide circle
+
+entity "EventSections" as e03 {
+  *<color:darkRed>sectionID : UUID <<FK>>
+  *<color:darkGreen>eventID : UUID <<FK>>
+  --
+  *price : DECIMAL
+  *availability : INTEGER
+  version : INTEGER
+}
+
+@enduml

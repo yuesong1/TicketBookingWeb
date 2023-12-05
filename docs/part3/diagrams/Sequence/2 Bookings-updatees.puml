@@ -1,0 +1,23 @@
+@startuml sequenceDiagram
+  participant "bookingLogic\n:BookingLogic" as bl
+  participant "esMapper\n:EventSectionMapper" as esm
+  participant "es\n:EventSection" as es
+  database PostgreSQL as db
+
+  mainframe Update EventSection
+  activate bl
+    bl->>esm: updateWithVersionCheck(es, conn)
+    activate esm
+      esm->>db: UPDATE eventsection\nSET price = ?, available = ?, version = version + 1\nWHERE eventid = uuid(?) AND sectionid = uuid(?) AND version = ?
+        activate db
+          db->>esm: int affectedRows
+        deactivate db
+        alt affectedRows == 0
+          esm-->>bl: OptimisticLockingException
+        else
+          esm-->> bl: affectedRows
+        end
+    deactivate esm
+  deactivate bl
+
+@enduml

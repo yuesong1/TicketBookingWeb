@@ -1,0 +1,147 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+interface application.Command #ffcccc {
+  + init(req : HttpServletRequest, rsp : HttpServletResponse) : void
+  + process() : void
+}
+class application.BusinessTransactionCommand #ffcccc implements application.Command {
+  + APP_SESSION : String = "appSession"
+  + LOCK_REMOVER : String = "removeLock"
+  # req : HttpServletRequest
+  # rsp : HttpServletResponse
+  # startNewBusinessTransaction() : void
+  # continueBusinessTransaction() : void
+}
+class application.ReleaseAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ReleaseEventCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ViewAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.UpdateVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.SavedVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ApplicationSession #ffcccc {
+    - id : String
+    - user : String = null
+    - imap : IdentityHashMap = new IdentityHashMap()
+}
+class application.AppSessionManager #ffcccc {
+    - {static} current : ThreadLocal = new ThreadLocal()
+    + {static} getSession() : ApplicationSession
+    + {static} setSession(session : ApplicationSession) : void
+}
+
+interface "util.«singleton»\nLockManager" #ffcccc {
+    acquireReadLock(lockable : String, owner : String) : boolean
+    acquireWriteLock(lockable : String, owner : String) : boolean
+    releaseReadLock(lockable : String) : void
+    releaseWriteLock(lockable : String) : void
+    + {static} getInstance() : LockManager
+}
+class "util.«singleton»\nReadWriteLockManager" #ffcccc implements "util.«singleton»\nLockManager" {
+
+    - {static} WRITE : int = 1;
+    - {static} READ : int = 2;
+    - {static} ALL : int = 3;
+    - {static} instance : ReadWriteLockManager
+    - (SQL script Strings…) {readOnly}
+    + acquireReadLock(lockable : String, owner : String) : boolean
+    + acquireReadAllLock(lockable : String, owner : String) : boolean
+    + acquireWriteLock(lockable : String, owner : String) : boolean
+    + releaseWriteLock(lockable : String) : void
+    + releaseReadAllLock() : void
+    + releaseReadLock(lockable : String) : void
+    + releaseAllLock(owner : String) : void
+    - hasAnyWriteLock() : boolean
+    - hasLock(lockable : String) : boolean
+    - hasWriteLock(lockable : String) : boolean
+    - hasReadLock(lockable : String) : boolean
+}
+"util.«singleton»\nReadWriteLockManager" "1"-->"1" "util.«singleton»\nReadWriteLockManager" : instance
+class "util.«singleton»\nDBUtil" #ddddff {
+  <color:darkRed>-{static} conn : ThreadLocal<Connection> =\n<color:darkRed>　　ThreadLocal.withInitial(() -> { return connection(); })
+  + {static} connection() : Connection
+  + {static} Connection closeConnection()
+  + {static} void getConnection()
+  + {static} readSQL(SQL_LOCATION : String) : String
+  + {static} initTables() : void
+  + {static} cleanUp(s : PreparedStatement, rs : ResultSet) : void
+  + {static} cleanUp(s : PreparedStatement) : void
+}
+"util.«singleton»\nDBUtil" "1"-->"1" "util.«singleton»\nDBUtil" : instance
+class "util.«singleton»\nUnitOfWork" #ddddff {
+  - {static} current : ThreadLocal = new ThreadLocal()
+  <color:darkBlue>--{static} conn : Connection = DBUtil.connection()--
+  - newObjects : List = new ArrayList()
+  - dirtyObjects : List = new ArrayList()
+  - removedObjects : List = new ArrayList()
+  + registerNew(object : DomainObject) : void
+  + registerDirty(object : DomainObject) : void
+  + registerRemoved(object : DomainObject) : void
+  + registerClean(object : DomainObject) : void
+  <color:darkBlue>+commit() : void
+  <color:darkRed>+rollback() : void
+  - insertNew() : void
+  - updateDirty() : void
+  - deleteRemoved() : void
+  + {static} newCurrent() : void
+  + {static} setCurrent(UnitOfWork uow) : void
+  + {static} getCurrent() : UnitOfWork
+  <color:darkBlue>--+{static} getConn() : Connection--
+}
+"util.«singleton»\nUnitOfWork" "1"-->"1" "util.«singleton»\nUnitOfWork" : current
+
+application.AppSessionManager -l-> application.ApplicationSession : stores as ThreadLocal
+application -[hidden]d-> util
+
+application.BusinessTransactionCommand ..> application.ApplicationSession : «uses»
+application.BusinessTransactionCommand ..> application.AppSessionManager : «store/retrieve\nsession»
+application.BusinessTransactionCommand ..> "util.«singleton»\nReadWriteLockManager" : «resets\nsession\ndata»
+
+application.ReleaseAllVenueCommand ..> "util.«singleton»\nReadWriteLockManager" : «releases\nread-all\nlock to»
+application.ReleaseEventCommand ..> "util.«singleton»\nReadWriteLockManager" : «releases\nread-all\nlock to»
+application.SavedVenueCommand ..> "util.«singleton»\nReadWriteLockManager" : «releases\nwrite-one\nlock to»
+application.ViewAllVenueCommand ..> "util.«singleton»\nReadWriteLockManager" : «acquires\nread-all\nlock from»
+application.UpdateVenueCommand ..> "util.«singleton»\nReadWriteLockManager" : «acquires\nwrite-one\nlock from»
+
+application.ReleaseAllVenueCommand ..> "util.«singleton»\nUnitOfWork" : «registers\nchanges to»
+application.ReleaseEventCommand ..> "util.«singleton»\nUnitOfWork" : «registers\nchanges to»
+application.SavedVenueCommand ..> "util.«singleton»\nUnitOfWork" : «registers\nchanges to»
+application.ViewAllVenueCommand ..> "util.«singleton»\nUnitOfWork" : «registers\nchanges to»
+application.UpdateVenueCommand ..> "util.«singleton»\nUnitOfWork" : «registers\nchanges to»
+
+application.ReleaseAllVenueCommand ..> "util.«singleton»\nDBUtil" : «manages\nconnection\nwith»
+application.ReleaseEventCommand ..> "util.«singleton»\nDBUtil" : «manages\nconnection\nwith»
+application.SavedVenueCommand ..> "util.«singleton»\nDBUtil" : «manages\nconnection\nwith»
+application.ViewAllVenueCommand ..> "util.«singleton»\nDBUtil" : «manages\nconnection\nwith»
+application.UpdateVenueCommand ..> "util.«singleton»\nDBUtil" : «manages\nconnection\nwith»
+
+application.ReleaseAllVenueCommand ..> "application.AppSessionManager" : «manages\nsession with»
+application.ReleaseEventCommand ..> "application.AppSessionManager" : «manages\nsession with»
+application.SavedVenueCommand ..> "application.AppSessionManager" : «manages\nsession with»
+application.ViewAllVenueCommand ..> "application.AppSessionManager" : «manages\nsession with»
+application.UpdateVenueCommand ..> "application.AppSessionManager" : «manages\nsession with»
+
+application.ReleaseAllVenueCommand ..> "application.ApplicationSession" : «stores/obtains\ndata»
+application.ReleaseEventCommand ..> "application.ApplicationSession" : «stores/obtains\ndata»
+application.SavedVenueCommand ..> "application.ApplicationSession" : «stores/obtains\ndata»
+application.ViewAllVenueCommand ..> "application.ApplicationSession" : «stores/obtains\ndata»
+application.UpdateVenueCommand ..> "application.ApplicationSession" : «stores/obtains\ndata»
+
+application.ApplicationSession -[hidden]d-> "util.«singleton»\nUnitOfWork"
+application.ApplicationSession -[hidden]d-> "util.«singleton»\nLockManager"
+' "util.«singleton»\nLockManager" -[hidden]l-> "util.«singleton»\nReadWriteLockManager"
+application.Command -[hidden]r-> application.BusinessTransactionCommand
+application.UpdateVenueCommand -[hidden]d-> application.SavedVenueCommand
+application.ViewAllVenueCommand -[hidden]d-> application.ReleaseAllVenueCommand
+application.ViewAllVenueCommand -[hidden]d-> application.ReleaseEventCommand
+
+' package application #ffcccc
+' package util #ddddff
+
+@enduml

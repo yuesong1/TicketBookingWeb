@@ -1,0 +1,72 @@
+@startuml sequenceDiagram
+  participant Frontend as FE
+  participant "controllers/.../\nViewEvent" as cve
+  participant "controllers/.../\nCreateBooking" as ccb
+  participant "bookingLogic\n:BookingLogic" as bl
+  participant "esMapper\n:EventSectionMapper" as esm
+  participant "<<Singleton>>\nUnitOfWork" as uw
+  ' participant "es\n:EventSection" as es
+  participant DBUtil
+  
+  ' participant "mapper\n:VenueMapper" as VM
+  ' participant "plannerEvent\n:Object[]" as Sc
+  ' participant "e\n:Event" as Vn
+  ' participant "<color:darkRed>allEvents\n<color:darkRed>:Map<UUID, Event>" as AV
+
+  activate FE
+    FE->>cve: doGet(request0, response0)
+    activate cve
+      cve-->>FE: Event object, including\nEventSections' version
+    deactivate cve
+    FE->>ccb: doPost(request1, response1)
+    activate ccb
+      create bl
+      ccb->>bl: createBookings(request1)
+      activate bl
+        bl->>esm: find(new Key(\n　　{eventId, sectionID}))
+        activate esm
+          esm-->>bl: EventSection es
+        deactivate esm
+
+        alt es.getVersion() != incomingVersion
+          bl->>DBUtil: getConnection().rollback()
+          activate DBUtil
+          deactivate DBUtil
+          bl-->>ccb: OptimisticLockingException
+          ccb-->>FE: 400 Bad Request
+        else
+          alt es.getAvailability() <= 0
+            bl-->>ccb: RuntimeException
+            ccb-->>FE: 400 Bad Request
+          else
+            bl->>DBUtil: getConnection()
+            activate DBUtil
+              DBUtil-->>bl: Connection conn
+            deactivate DBUtil
+            bl->>esm: updateWithVersionCheck(\n　　availbilityUpdatedES, conn)
+              ref over esm
+                Update
+                EventSection
+              end ref
+            esm-->>bl: int affectedRows
+            alt affectedRows == 0 || OptimisticLockingException
+              bl->>DBUtil: getConnection().rollback()
+              activate DBUtil
+              deactivate DBUtil
+              bl-->>ccb: OptimisticLockingException
+              ccb-->>FE: 400 Bad Request
+            else
+              ref over bl, uw
+                Create and mark
+                Booking object
+              end ref
+              bl->>uw: getCurrent().commit()
+              bl-->>ccb: Booking b
+              ccb-->>FE: 201 Created, b
+            end
+          end
+        end
+      deactivate bl
+    deactivate ccb
+  deactivate FE
+@enduml

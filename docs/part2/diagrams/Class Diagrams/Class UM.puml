@@ -1,0 +1,107 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+' util
+class util.DBUtil {
+  + {static} connection() : Connection
+  + {static} readSQL(SQL_LOCATION : String) : String
+  + {static} initTables() : void
+  + {static} cleanUp(s : PreparedStatement, rs : ResultSet) : void
+  + {static} cleanUp(s : PreparedStatement) : void
+}
+interface util.StatementSource {
+  sqlQuery() : String 
+  parameters() : Object[]
+}
+class util.UnitOfWork {
+  - {static} current : ThreadLocal = new ThreadLocal()
+  {static} conn : Connection = DBUtil.connection()
+  - newObjects : List = new ArrayList()
+  - dirtyObjects : List = new ArrayList()
+  - removedObjects : List = new ArrayList()
+  + registerNew(object : DomainObject) : void
+  + registerDirty(object : DomainObject) : void
+  + registerRemoved(object : DomainObject) : void
+  + registerClean(object : DomainObject) : void
+  + commit() : void
+  - insertNew() : void
+  - updateDirty() : void
+  - deleteRemoved() : void
+  + {static} newCurrent() : void
+  + {static} setCurrent(UnitOfWork uow) : void
+  + {static} getCurrent() : UnitOfWork
+  + {static} getConn() : Connection
+}
+
+' mappers
+abstract mappers.AbstractMapper {
+  {static} conn : Connection = DBUtil.connection()
+  + getConn() : Connection
+  # loadedMap : Map = new HashMap()
+  + find(key : Key) : DomainObject
+  + findMany(source : StatementSource) : List<DomainObject> 
+  # doFind(key : Key, finder : PreparedStatement) : void
+  # load(rs : ResultSet) : DomainObject
+  # load(key : Key, rs : ResultSet) : DomainObject
+  # loadAll(rs : ResultSet) : List<DomainObject> 
+  {abstract} # doLoad(key : Key, rs : ResultSet) : DomainObject
+  # addKey(rs : ResultSet) : Key
+  + insert(object : DomainObject, conn : Connection) : Key
+  {abstract} # insertData(object : DomainObject, statement : PreparedStatement) : void
+  # insertKey(object : DomainObject, statement : PreparedStatement) : void
+  + update(object : DomainObject, conn : Connection) : void
+  {abstract} # doUpdate(object : DomainObject, statement : PreparedStatement) : void
+  + delete(key : Key, conn : Connection) : void
+  # doDelete(key : Key, statement : PreparedStatement) : void
+  {abstract} # findStatement() : String
+  {abstract} # insertStatement() : String
+  {abstract} # updateStatement() : String
+  {abstract} # deleteStatement() : String
+}
+class "mappers.<<singleton>>\nMapperRegistry" {
+  - {static} instance : MapperRegistry
+  {static} mappers : Map<Class<?>, AbstractMapper>
+  + {static} getInstance() : MapperRegistry
+  - registerMapper() : void
+  + <T extends AbstractMapper> getMapper(o : Object) : T
+}
+
+' objects
+class objects.PKCounts.Key {
+  - pks : Object[]
+  + Key(pks : Object[])
+  + Key(uuid : UUID)
+  + getPks() : Object[]
+  + getKey(i : int) : Object
+  + getId() : UUID
+  + equals(object : Object) : boolean
+  - checkKey(keyFields : Object[]) : void
+}
+class objects.DomainObject {
+  - primaryKey : Key
+  # DomainObject()
+  # DomainObject(primaryKey : Key)
+  + markNew() : void
+  + markClean() : void
+  + markDirty() : void
+  + markRemoved() : void
+}
+objects.DomainObject "1" *-- "1" objects.PKCounts.Key : contains
+
+database PostgreSQL
+
+"mappers.<<singleton>>\nMapperRegistry" "1"-->"*" mappers.AbstractMapper : holds
+util.UnitOfWork ..> "mappers.<<singleton>>\nMapperRegistry" : "<<gets mapper from>>\n\n\n\n\n"
+util.UnitOfWork ..> mappers.AbstractMapper : <<commits changes to>>
+util.UnitOfWork ..> objects.DomainObject : Has on register
+mappers.AbstractMapper ..> util.DBUtil : <<uses>>
+mappers.AbstractMapper ..> PostgreSQL : "<<saves into/\nretrieves from>>"
+mappers.AbstractMapper ..> objects.PKCounts.Key : <<maps to DB data>>
+mappers.AbstractMapper --> objects.PKCounts.Key : "creates\nusing DB data"
+mappers.AbstractMapper --> objects.DomainObject : creates using DB data
+mappers.AbstractMapper ..> objects.DomainObject : <<maps to DB data>>
+mappers.AbstractMapper --> util.StatementSource : "<<makes custom SQL commands with>>\n\n\n\n\n\n\n\n\n"
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml sequenceDiagram
+  participant "cmd\n:Command" as cmd
+  participant "lock\n:ReadWriteLockManager" as lm
+  database PostgreSQL as db
+
+  activate cmd
+    cmd->>lm: acquireReadAllLock(\n　　lockableID, sessionID)
+    activate lm
+      lm->>db: SELECT lockableid FROM lock\n　　WHERE version = <WRITE>;
+      activate db
+        db-->>lm: ResultSet rs
+      deactivate db
+      alt rs.next()  // some row has write lock
+        lm-->>cmd: false // do not give lock
+      else // no row has write lock
+        lm->>db: INSERT INTO lock VALUES(\n　　uuid(lockableID), sessionID, <ALL>);
+        activate db
+        deactivate db
+        lm-->>cmd: true // lock given
+      end
+    deactivate lm
+  deactivate cmd
+@enduml

@@ -1,0 +1,19 @@
+@startuml sequenceDiagram
+  participant "cmd\n:BusinessTransactionCommand" as cmd
+  participant "httpSession\n:HttpSession" as hs
+  participant "appSession\n:ApplicationSession" as apps
+  participant "<<Singleton>>\nAppSessionManager" as sm
+
+  activate cmd
+    create hs
+    cmd->>hs: httpSession =\n　　getReq().getSession(true)
+    create apps
+    cmd->>apps: appSession = new ApplicationSession(\n　　httpSession.getId(),\n　　getReq().getRemoteUser(), new IdentityHashMap())
+    cmd->>sm: setSession(appSession)
+    activate sm
+    deactivate sm
+    cmd->>hs: setAttribute(APP_SESSION, appSession)
+    activate hs
+    deactivate hs
+  deactivate cmd
+@enduml

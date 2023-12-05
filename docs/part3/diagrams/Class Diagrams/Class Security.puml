@@ -1,0 +1,47 @@
+@startuml
+allowmixing
+skinparam classAttributeIconSize 0
+hide circle
+
+package UI
+database PostgreSQL
+class auth.JwtTokenUtil {
+  - {static} key : Key = Keys.secretKeyFor(SignatureAlgorithm.HS256)
+  - {static} EXPIRATION_TIME : long = 3600000
+  + {static} generateToken(email : String, role : String) : String
+  + {static} getRoleFromToken(token : String) : String
+  + {static} getEmailFromToken(token : String) : String
+  + {static} validateToken(token : String) : boolean
+}
+class mappers.UserMapper {
+  - (SQL script Strings…) {readOnly}
+  {static} s : PreparedStatementtatement
+  + viewAll() : List
+  + {static} findUserByToken(token : String, conn : Connection) : User
+  + {static} updateUserToken(email : String, token : String, conn : Connection) : void
+}
+class auth.TokenAuthenticationFilter {
+  - HEADER_NAME : String = "Authorization"
+  # doFilterInternal(request : HttpServletRequest,\n    response : HttpServletResponse, filterChain : FilterChain) : void
+}
+class controllers.users.Login {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class security.WebSecurityConfig {
+  - {static} PROPERTY_CORS_ORIGINS_UI : String = "cors.origins.ui" {readOnly}
+  + securityFilterChain(http : HttpSecurity) : SecurityFilterChain
+  + corsConfigurationSource() : CorsConfigurationSource
+}
+
+controllers.users.Login ..> mappers.UserMapper : <<verify user login>>
+controllers.users.Login ..> mappers.UserMapper : <<update access token>>
+controllers.users.Login ..> auth.JwtTokenUtil : <<generates tokens with>>
+mappers.UserMapper ..> PostgreSQL : <<saves/loads\nuser data>>
+security.WebSecurityConfig ..> auth.TokenAuthenticationFilter : <<filters requests with>>
+auth.TokenAuthenticationFilter ..> auth.JwtTokenUtil : <<validates tokens with>>
+auth.TokenAuthenticationFilter ..> auth.JwtTokenUtil : <<gets user role from>>
+UI ..> security : <<sends requests to>>
+security ..> controllers : <<sends filtered\nrequests to>>
+
+@enduml

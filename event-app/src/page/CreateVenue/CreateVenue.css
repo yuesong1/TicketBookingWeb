@@ -1,0 +1,32 @@
+/* CreateVenue.css */
+
+.create-venue-container {
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    margin: 20px;
+  }
+  
+  .create-venue-form {
+    width: 60%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .section-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .delete-buttons{
+    margin-top: 10px;
+  }

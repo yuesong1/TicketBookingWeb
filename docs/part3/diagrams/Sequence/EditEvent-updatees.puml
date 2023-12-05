@@ -1,0 +1,26 @@
+@startuml sequenceDiagram
+  participant "eventLogic\n:EventLogic" as el
+  participant "<<Singleton>>\nUnitOfWork" as uw
+  participant "es\n:DomainObject" as es
+  participant "esMapper\n:EventSectionMapper" as esm
+  database PostgreSQL as db
+
+  mainframe Update EventSection
+  activate uw
+    loop for (Iterator objects = dirtyObjects.iterator(); objects.hasNext();)
+      create es
+      uw->>es: es = objects.next()
+      uw->>esm: updateWithVersionCheck(es, conn)
+      activate esm
+        esm->>db: UPDATE eventsection\nSET price = ?, available = ?, version = version + 1\nWHERE eventid = uuid(?)\n　　AND sectionid = uuid(?) AND version = ?
+          activate db
+            db->>esm: int affectedRows
+            alt affectedRows == 0
+              esm-->>uw: OptimisticLockingException
+            end
+          deactivate db
+      deactivate esm
+    end
+  deactivate uw
+
+@enduml

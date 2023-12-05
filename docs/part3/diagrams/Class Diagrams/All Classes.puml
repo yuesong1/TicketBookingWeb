@@ -1,0 +1,480 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+' application
+interface application.Command #ffcccc {
+  + init(req : HttpServletRequest, rsp : HttpServletResponse) : void
+  + process() : void
+}
+class application.BusinessTransactionCommand #ffcccc implements application.Command {
+  + APP_SESSION : String = "appSession"
+  + LOCK_REMOVER : String = "removeLock"
+  # req : HttpServletRequest
+  # rsp : HttpServletResponse
+  # startNewBusinessTransaction() : void
+  # continueBusinessTransaction() : void
+}
+class application.ReleaseAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ReleaseEventCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.SavedVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.UpdateVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ViewAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ApplicationSession #ffcccc {
+    - id : String
+    - user : String = null
+    - imap : IdentityHashMap = new IdentityHashMap()
+}
+class application.AppSessionManager #ffcccc {
+    - {static} current : ThreadLocal = new ThreadLocal()
+    + {static} getSession() : ApplicationSession
+    + {static} setSession(session : ApplicationSession) : void
+}
+
+' auth
+class auth.JwtTokenUtil {
+  - {static} key : Key = Keys.secretKeyFor(SignatureAlgorithm.HS256)
+  - {static} EXPIRATION_TIME : long = 3600000
+  + {static} generateToken(email : String, role : String) : String
+  + {static} getRoleFromToken(token : String) : String
+  + {static} getEmailFromToken(token : String) : String
+  + {static} validateToken(token : String) : boolean
+}
+class auth.TokenAuthenticationFilter {
+  - HEADER_NAME : String = "Authorization"
+  # doFilterInternal(request : HttpServletRequest,\n    response : HttpServletResponse, filterChain : FilterChain) : void
+}
+
+' controllers
+class controllers.Home {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.bookings.CreateBooking {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.bookings.DeleteBooking {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doDelete(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.bookings.ViewBooking {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.events.CreateEvent {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.events.DeleteEvent {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doDelete(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.events.UpdateEvent {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPut(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.events.ViewEvent {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.users.Login {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.users.Logout {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.users.Signup {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.users.ViewUser {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.venues.CreateVenue {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.venues.DeleteVenue {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doDelete(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.venues.UpdateVenue {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  ' doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.venues.ViewVenue {
+  ' doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+
+' util
+interface "util.«singleton»\nLockManager" #ffcccc {
+    acquireReadLock(lockable : String, owner : String) : boolean
+    acquireWriteLock(lockable : String, owner : String) : boolean
+    releaseReadLock(lockable : String) : void
+    releaseWriteLock(lockable : String) : void
+    + {static} getInstance() : LockManager
+}
+class "util.«singleton»\nReadWriteLockManager" #ffcccc implements "util.«singleton»\nLockManager" {
+
+    - {static} WRITE : int = 1;
+    - {static} READ : int = 2;
+    - {static} ALL : int = 3;
+    - {static} instance : ReadWriteLockManager
+    - (SQL script Strings…) {readOnly}
+    + acquireReadLock(lockable : String, owner : String) : boolean
+    + acquireReadAllLock(lockable : String, owner : String) : boolean
+    + acquireWriteLock(lockable : String, owner : String) : boolean
+    + releaseWriteLock(lockable : String) : void
+    + releaseReadAllLock() : void
+    + releaseReadLock(lockable : String) : void
+    + releaseAllLock(owner : String) : void
+    - hasAnyWriteLock() : boolean
+    - hasLock(lockable : String) : boolean
+    - hasWriteLock(lockable : String) : boolean
+    - hasReadLock(lockable : String) : boolean
+}
+"util.«singleton»\nReadWriteLockManager" "1"-->"1" "util.«singleton»\nReadWriteLockManager" : instance
+class "util.«singleton»\nDBUtil" #ddddff {
+  <color:darkRed>-{static} conn : ThreadLocal<Connection> =\n<color:darkRed>　　ThreadLocal.withInitial(() -> { return connection(); })
+  + {static} connection() : Connection
+  + {static} Connection closeConnection()
+  + {static} void getConnection()
+  + {static} readSQL(SQL_LOCATION : String) : String
+  + {static} initTables() : void
+  + {static} cleanUp(s : PreparedStatement, rs : ResultSet) : void
+  + {static} cleanUp(s : PreparedStatement) : void
+}
+"util.«singleton»\nDBUtil" "1"-->"1" "util.«singleton»\nDBUtil" : instance
+class util.DomainUtil {
+  + {static} parseParams(request : HttpServletRequest) : Map<String, String>
+  + {static} <T> compareListsNoPK(List<T> requested, List<T> original) : List<T>[]
+  + {static} compareListsOnePKl(List<Section> sections, List<Section> sections1) : List<Section>[]
+}
+interface util.StatementSource {
+  sqlQuery() : String 
+  parameters() : Object[]
+}
+class "util.«singleton»\nUnitOfWork" #ddddff {
+  - {static} current : ThreadLocal = new ThreadLocal()
+  <color:darkBlue>--{static} conn : Connection = DBUtil.connection()--
+  - newObjects : List = new ArrayList()
+  - dirtyObjects : List = new ArrayList()
+  - removedObjects : List = new ArrayList()
+  + registerNew(object : DomainObject) : void
+  + registerDirty(object : DomainObject) : void
+  + registerRemoved(object : DomainObject) : void
+  + registerClean(object : DomainObject) : void
+  <color:darkBlue>+commit() : void
+  <color:darkRed>+rollback() : void
+  - insertNew() : void
+  - updateDirty() : void
+  - deleteRemoved() : void
+  + {static} newCurrent() : void
+  + {static} setCurrent(UnitOfWork uow) : void
+  + {static} getCurrent() : UnitOfWork
+  <color:darkBlue>--+{static} getConn() : Connection--
+}
+"util.«singleton»\nUnitOfWork" "1"-->"1" "util.«singleton»\nUnitOfWork" : current
+
+' domain
+class domain.BookingLogic {
+  {static} esMapper : EventSectionMapper =\n    MapperRegistry.getInstance().getMapper(EventSection.class)
+  + {static} createBookings(request : HttpServletRequest) : Booking
+  + {static} viewBookingsByEvent(eventID : String) : List<Booking>
+  + {static} viewBookingsByCustomer(customerEmail : String) : List<Booking>
+  + {static} deleteBooking(idStr : String) : void
+  + {static} bookingInstant(request : HttpServletRequest) : Booking
+}
+class domain.EventLogic #ddddff {
+    {static} mapper : EventMapper = MapperRegistry.getInstance().getMapper(Event.class)
+    {static} esMapper : EventSectionMapper = MapperRegistry.getInstance().getMapper(EventSection.class)
+
+    <color:darkBlue>+createEvent(request : HttpServletRequest) : Event
+    - addEventSections(requestedE : Event, eSections : List<EventSection>) : void
+    - addPlanner(requestedE : Event, create : boolean) : void
+    <color:darkBlue>-checkVenueAvail(venue : Venue, startDateTime : LocalDateTime, endDateTime : LocalDateTime) : boolean
+    <color:darkBlue>+updateEvent(request : HttpServletRequest) : Event
+    <color:darkRed>-checkUpdateVenueAvail(venue : Venue, startDateTime : LocalDateTime, endDateTime : LocalDateTime, eventID : String) : boolean
+    + {static} deleteEvent(idStr : String) : Event
+    + {static} viewOne(idStr : String) : Event
+    + {static} viewAll() : List<Event>
+    + {static} view6Month() : List<Event>
+    + {static} viewSearch(input : String) : List<Event>
+    + {static} eventInstant(request : HttpServletRequest) : Event
+    + {static} parseVenue(e : Event, venueObj : Object) : Event
+    + {static} parseSection(secObj : Object, eID : UUID) : List<EventSection>
+    + viewByPlanner(emailStr : String) : List<Event> 
+    + {static} compareESections(requested : List<EventSection>, original : List<EventSection>) : void
+}
+class domain.UserLogic {
+  {static} UserMapper userMapper = MapperRegistry.getInstance().getMapper(User.class)
+  + {static} signUp(request : HttpServletRequest) : User
+  + {static} viewAllUsers() : ArrayList[]
+  + {static} userInstant(request : HttpServletRequest) : User
+  + {static} viewOneUser(email : String, typeStr : String) : User
+}
+class domain.VenueLogic {
+  {static} venueMapper : VenueMapper = MapperRegistry.getInstance().getMapper(Venue.class)
+  {static} sectionMapper : SectionMapper = MapperRegistry.getInstance().getMapper(Section.class)
+  + {static} deleteVenue(idStr : String) : Venue
+  + {static} viewOneVenue(idStr : String) : Venue
+  + {static} viewAllVenue() :  List<Venue>
+  + {static} updateVenue(request : HttpServletRequest) : Venue
+  + {static} createVenue(request : HttpServletRequest) : Venue
+  + {static} venueInstant(request : HttpServletRequest) : Venue
+  + {static} parseSection(secStr : String) : Section
+  + {static} compareSections(requested : List<Section>, original : List<Section>, eId : UUID) : void
+}
+
+' mappers
+class mappers.lazyLoad.ValueHolder {
+  - value : Object
+  - loader : ValueLoader
+  + ValueHolder(loader : ValueLoader)
+  + getValue() : Object
+}
+interface mappers.lazyLoad.ValueLoader {
+  load(conn : Connection) : Object
+}
+class mappers.lazyLoad.SectionLoader implements mappers.lazyLoad.ValueLoader {
+  - sectionId : UUID
+  + SectionLoader(id : UUID)
+  + load(conn : Connection) : Object
+}
+
+' objects
+class objects.PKCounts.Key {
+  - pks : Object[]
+  + Key(pks : Object[])
+  + Key(uuid : UUID)
+  + getPks() : Object[]
+  + getKey(i : int) : Object
+  + getId() : UUID
+  + equals(object : Object) : boolean
+  - checkKey(keyFields : Object[]) : void
+}
+class objects.DomainObject {
+  - primaryKey : Key
+  # DomainObject()
+  # DomainObject(primaryKey : Key)
+  + markNew() : void
+  + markClean() : void
+  + markDirty() : void
+  + markRemoved() : void
+}
+class objects.Admin extends objects.User {
+}
+class objects.Booking extends objects.DomainObject {
+    - section : Section = null
+    - numTickets : Integer = null
+    - customerEmail : String = null
+    - event : Event = null
+}
+class objects.Customer extends objects.User {
+  - bookings : List<Booking> = new ArrayList<>()
+}
+class objects.Event extends objects.DomainObject {
+    - name : String = null
+    - venue : Venue = null
+    - startDateTime : LocalDateTime = null
+    - endDateTime : LocalDateTime = null
+    - artist : String = null
+    - description : String = null
+    - List<Booking> bookings = new ArrayList<>()
+    - eventSections : List<EventSection> = new ArrayList<>()
+    - plannerEmails : List<String>= new ArrayList<>()
+    - planners : List<Planner> = new ArrayList<>()
+    - eventSectionString() : String
+    + plannerEmailsString() : String
+    + toString() : String
+}
+class objects.EventSection extends objects.DomainObject {
+    - price : Double = null
+    - availability : Integer= null
+    - section : ValueHolder
+    + getSection() : Object
+    + setSection(section : ValueHolder) : void
+}
+class objects.Planner extends objects.User {
+
+}
+class objects.Section extends objects.DomainObject {
+  - venueID : UUID = null
+  - type : String = null
+  - capacity : Integer = null
+}
+class objects.User extends objects.DomainObject implements UserDetails {
+  - role : UserAccess = null
+  - password : String = null
+  - token : String = null
+  + getEmail() : String
+  + setEmail(email : String) : void
+  + getAuthorities() : Collection<? extends GrantedAuthority>
+}
+enum "objects.<<enum>>\nUserAccess" implements GrantedAuthority {
+  customer
+  planner
+  admin
+  + getAuthority() : String
+}
+class objects.Venue #ddddff extends objects.DomainObject {
+  - name : String = null
+  - address : String = null
+  - sections : List<Section> = new ArrayList<>()
+  - events : List<Event> = new ArrayList<>()
+  <color:darkRed>-version: Integer
+}
+
+abstract mappers.AbstractMapper #ddddff {
+  {static} conn : Connection = DBUtil.connection()
+  + getConn() : Connection
+  # loadedMap : Map = new HashMap()
+  + find(key : Key) : DomainObject
+  + findMany(source : StatementSource) : List<DomainObject> 
+  # doFind(key : Key, finder : PreparedStatement) : void
+  # load(rs : ResultSet) : DomainObject
+  # load(key : Key, rs : ResultSet) : DomainObject
+  # loadAll(rs : ResultSet) : List<DomainObject> 
+  {abstract} # doLoad(key : Key, rs : ResultSet) : DomainObject
+  # addKey(rs : ResultSet) : Key
+  + insert(object : DomainObject, conn : Connection) : Key
+  {abstract} # insertData(object : DomainObject, statement : PreparedStatement) : void
+  # insertKey(object : DomainObject, statement : PreparedStatement) : void
+  <color:darkBlue>+update(object : DomainObject, conn : Connection) : void
+  {abstract} # doUpdate(object : DomainObject, statement : PreparedStatement) : void
+  + delete(key : Key, conn : Connection) : void
+  # doDelete(key : Key, statement : PreparedStatement) : void
+  {abstract} # findStatement() : String
+  {abstract} # insertStatement() : String
+  {abstract} # updateStatement() : String
+  {abstract} # deleteStatement() : String
+}
+class mappers.BookingMapper #ddddff extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  {static} s : PreparedStatementtatement
+  {static} sectionMapper : SectionMapper =\n    MapperRegistry.getInstance().getMapper(Section.class)
+  <color:darkRed>+findByCustomer(pattern : String) : List
+  <color:darkRed>+findByEvent(id : UUID) : List
+  <color:darkBlue>--+{static} viewBookingByCustomer(customerEmail : String,--\n    <color:darkBlue>--conn : Connection) : List<Booking>--
+  <color:darkBlue>--+{static} viewBookingByEvent(eventID : UUID,--\n    <color:darkBlue>--conn : Connection) : List<Booking>--
+  + {static} checkBooking(bId : UUID, conn : Connection) : boolean
+  + {static} createBooking(booking : Booking, conn : Connection) : Booking 
+  + {static} updateBooking(booking : Booking, conn : Connection) : boolean
+  + hasBookingsForEvent(eventId : UUID) : boolean
+  <color:darkRed><color:darkBlue>--+{static} deleteBooking(bId : UUID, conn : Connection) : void--
+  <color:darkBlue>--+{static} deleteBookingByEvent(eID : UUID, conn : Connection) : void--
+}
+class "mappers. BookingMapper.«static»\nFindBookingsByCustomer" #ffcccc implements util.StatementSource {
+  - customerEmail : String
+}
+mappers.BookingMapper +-- "mappers. BookingMapper.«static»\nFindBookingsByCustomer"
+class "mappers. BookingMapper.«static»\nFindBookingsByEvent" #ffcccc implements util.StatementSource {
+  - eventId : UUID
+}
+mappers.BookingMapper +-- "mappers. BookingMapper.«static»\nFindBookingsByEvent"
+class mappers.EventMapper extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  {static} s : PreparedStatementtatement = null
+  + viewAll() : List
+  + findByName(pattern : String) : List
+  + Event find(eID : Key)
+  # loadPlanners(key : Key) : List
+  + findByVenue(vId : UUID) : List
+  + viewPlannerByEvent(eID : UUID, conn : Connection) : List<String>
+  + {static} checkPlannerEvent(planner : Planner, event : Event, conn : Connection) : boolean
+  + createPlannerEvents(planners : List<Planner>, eventID : Key) : void
+  + deletePlannerEventsByEvent(eID : Key) : void
+  + {static} viewAllPlannerEvents(conn : Connection) : List<Object[]>
+  # addKey(rs : ResultSet) : Key
+}
+class "mappers. EventMapper.«static»\nViewAllEvents" implements util.StatementSource {
+}
+mappers.EventMapper +-- "mappers. EventMapper.ViewAllEvents"
+class "mappers. EventMapper.«static»\nFindEventsByName" implements util.StatementSource {
+  - name : String
+}
+mappers.EventMapper +-- "mappers. EventMapper.FindEventsByName"
+class "mappers. EventMapper.«static»\nFindEventsByVenue" implements util.StatementSource {
+  - vId : UUID
+}
+mappers.EventMapper +-- "mappers. EventMapper.FindEventsByVenue"
+
+class mappers.EventSectionMapper #ddddff extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  + viewAll() : List
+  + findByEvent(pattern : UUID) : List
+  <color:darkRed>+updateWithVersionCheck(es : EventSection, connection : Connection) : int
+}
+class "mappers. EventSectionMapper.«static»\nViewAllEventSections" implements util.StatementSource {
+}
+mappers.EventSectionMapper +-- "mappers. EventSectionMapper.ViewAllEventSections"
+class "mappers. EventSectionMapper.«static»\nFindEventSectionByEvent" implements util.StatementSource {
+  - eID : UUID
+}
+mappers.EventSectionMapper +-- "mappers. EventSectionMapper.FindEventSectionByEvent"
+
+class "mappers.<<singleton>>\nMapperRegistry" {
+  - {static} instance : MapperRegistry
+  {static} mappers : Map<Class<?>, AbstractMapper>
+  + {static} getInstance() : MapperRegistry
+  - registerMapper() : void
+  + <T extends AbstractMapper> getMapper(o : Object) : T
+}
+
+class mappers.SectionMapper extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  conn : Connection = DBUtil.connection()
+  + viewAll() : List
+  + findByVenue(pattern : UUID) : List
+  + {static} List<Section> deleteSectionsByVenue(venueId : UUID, conn : Connection)
+}
+class "mappers. SectionMapper.«static»\nViewAllSection" implements util.StatementSource {}
+mappers.SectionMapper +-- "mappers. SectionMapper.ViewAllSection"
+class "mappers. SectionMapper.«static»\nfindByVenue" implements util.StatementSource {
+  - vID : UUID
+}
+mappers.SectionMapper +-- "mappers. SectionMapper.findByVenue"
+
+class mappers.UserMapper extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  {static} s : PreparedStatementtatement
+  + viewAll() : List
+  + {static} findUserByToken(token : String, conn : Connection) : User
+  + {static} updateUserToken(email : String, token : String, conn : Connection) : void
+}
+class "mappers. UserMapper.«static»\nViewAllUsers" implements util.StatementSource {
+}
+mappers.UserMapper +-- "mappers. UserMapper.ViewAllUsers"
+
+class mappers.VenueMapper #ddddff extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  + findByName(pattern : String) : List
+  + viewAll() : List
+  <color:darkRed>+updateVersion(venueID : UUID, currentVersion: int) : void
+}
+class "mappers. VenueMapper.«static»\nFindVenuesByName" implements util.StatementSource {
+  - name : String
+}
+mappers.VenueMapper +-- "mappers. VenueMapper.FindVenuesByName"
+class "mappers. VenueMapper.«static»\nViewAllVenues" implements util.StatementSource {
+  - name : String
+}
+mappers.VenueMapper +-- "mappers. VenueMapper.ViewAllVenues"
+
+
+
+' security
+class security.SecurityWebApplicationInitializer {
+}
+class security.WebSecurityConfig {
+  - {static} PROPERTY_CORS_ORIGINS_UI : String = "cors.origins.ui" {readOnly}
+  + securityFilterChain(http : HttpSecurity) : SecurityFilterChain
+  + corsConfigurationSource() : CorsConfigurationSource
+}
+
+@enduml

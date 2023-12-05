@@ -1,0 +1,164 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+database PostgreSQL
+
+' mappers
+abstract mappers.AbstractMapper {
+  {static} conn : Connection = DBUtil.connection()
+  + getConn() : Connection
+  # loadedMap : Map = new HashMap()
+  + find(key : Key) : DomainObject
+  + findMany(source : StatementSource) : List<DomainObject> 
+  # doFind(key : Key, finder : PreparedStatement) : void
+  # load(rs : ResultSet) : DomainObject
+  # load(key : Key, rs : ResultSet) : DomainObject
+  # loadAll(rs : ResultSet) : List<DomainObject> 
+  {abstract} # doLoad(key : Key, rs : ResultSet) : DomainObject
+  # addKey(rs : ResultSet) : Key
+  + insert(object : DomainObject, conn : Connection) : Key
+  {abstract} # insertData(object : DomainObject, statement : PreparedStatement) : void
+  # insertKey(object : DomainObject, statement : PreparedStatement) : void
+  + update(object : DomainObject, conn : Connection) : void
+  {abstract} # doUpdate(object : DomainObject, statement : PreparedStatement) : void
+  + delete(key : Key, conn : Connection) : void
+  # doDelete(key : Key, statement : PreparedStatement) : void
+  {abstract} # findStatement() : String
+  {abstract} # insertStatement() : String
+  {abstract} # updateStatement() : String
+  {abstract} # deleteStatement() : String
+}
+class mappers.BookingMapper #ddddff extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  {static} s : PreparedStatementtatement
+  {static} sectionMapper : SectionMapper =\n    MapperRegistry.getInstance().getMapper(Section.class)
+  <color:darkRed>+findByCustomer(pattern : String) : List
+  <color:darkRed>+findByEvent(id : UUID) : List
+  <color:darkBlue>--+{static} viewBookingByCustomer(customerEmail : String,--\n    <color:darkBlue>--conn : Connection) : List<Booking>--
+  <color:darkBlue>--+{static} viewBookingByEvent(eventID : UUID,--\n    <color:darkBlue>--conn : Connection) : List<Booking>--
+  + {static} checkBooking(bId : UUID, conn : Connection) : boolean
+  + {static} createBooking(booking : Booking, conn : Connection) : Booking 
+  + {static} updateBooking(booking : Booking, conn : Connection) : boolean
+  + hasBookingsForEvent(eventId : UUID) : boolean
+  <color:darkRed><color:darkBlue>--+{static} deleteBooking(bId : UUID, conn : Connection) : void--
+  <color:darkBlue>--+{static} deleteBookingByEvent(eID : UUID, conn : Connection) : void--
+}
+class "mappers. BookingMapper.«static»\nFindBookingsByCustomer" #ffcccc implements util.StatementSource {
+  - customerEmail : String
+}
+mappers.BookingMapper +-- "mappers. BookingMapper.«static»\nFindBookingsByCustomer"
+class "mappers. BookingMapper.«static»\nFindBookingsByEvent" #ffcccc implements util.StatementSource {
+  - eventId : UUID
+}
+mappers.BookingMapper +-- "mappers. BookingMapper.«static»\nFindBookingsByEvent"
+class mappers.EventMapper extends mappers.AbstractMapper {
+}
+class "mappers. EventMapper.«static»\nViewAllEvents" implements util.StatementSource {
+}
+mappers.EventMapper +-- "mappers. EventMapper.«static»\nViewAllEvents"
+class "mappers. EventMapper.«static»\nFindEventsByName" implements util.StatementSource {
+  - name : String
+}
+mappers.EventMapper +-- "mappers. EventMapper.«static»\nFindEventsByName"
+class "mappers. EventMapper.«static»\nFindEventsByVenue" implements util.StatementSource {
+  - vId : UUID
+}
+mappers.EventMapper +-- "mappers. EventMapper.«static»\nFindEventsByVenue"
+
+class mappers.EventSectionMapper #ddddff extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  + viewAll() : List
+  + findByEvent(pattern : UUID) : List
+  <color:darkRed>+updateWithVersionCheck(es : EventSection, connection : Connection) : int
+}
+class "mappers. EventSectionMapper.«static»\nViewAllEventSections" implements util.StatementSource {
+}
+mappers.EventSectionMapper +-- "mappers. EventSectionMapper.«static»\nViewAllEventSections"
+class "mappers. EventSectionMapper.«static»\nFindEventSectionByEvent" implements util.StatementSource {
+  - eID : UUID
+}
+mappers.EventSectionMapper +-- "mappers. EventSectionMapper.«static»\nFindEventSectionByEvent"
+
+class "mappers.<<singleton>>\nMapperRegistry" {
+  - {static} instance : MapperRegistry
+  {static} mappers : Map<Class<?>, AbstractMapper>
+  + {static} getInstance() : MapperRegistry
+  - registerMapper() : void
+  + <T extends AbstractMapper> getMapper(o : Object) : T
+}
+
+class mappers.SectionMapper extends mappers.AbstractMapper {
+}
+class "mappers. SectionMapper.«static»\nViewAllSection" implements util.StatementSource {}
+mappers.SectionMapper +-- "mappers. SectionMapper.«static»\nViewAllSection"
+class "mappers. SectionMapper.«static»\nfindByVenue" implements util.StatementSource {
+  - vID : UUID
+}
+mappers.SectionMapper +-- "mappers. SectionMapper.«static»\nfindByVenue"
+
+class mappers.UserMapper extends mappers.AbstractMapper {
+}
+class "mappers. UserMapper.«static»\nViewAllUsers" implements util.StatementSource {
+}
+mappers.UserMapper +-- "mappers. UserMapper.«static»\nViewAllUsers"
+
+class mappers.VenueMapper #ddddff extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  + findByName(pattern : String) : List
+  + viewAll() : List
+  <color:darkRed>+updateVersion(venueID : UUID, currentVersion: int) : void
+}
+class "mappers. VenueMapper.«static»\nFindVenuesByName" implements util.StatementSource {
+  - name : String
+}
+mappers.VenueMapper +-- "mappers. VenueMapper.«static»\nFindVenuesByName"
+class "mappers. VenueMapper.«static»\nViewAllVenues" implements util.StatementSource {
+  - name : String
+}
+mappers.VenueMapper +-- "mappers. VenueMapper.«static»\nViewAllVenues"
+
+
+' util
+interface util.StatementSource {
+  sqlQuery() : String 
+  parameters() : Object[]
+}
+
+"mappers.<<singleton>>\nMapperRegistry" "1"-->"*" mappers.AbstractMapper : holds
+"mappers.<<singleton>>\nMapperRegistry" "1"-->"1" "mappers.<<singleton>>\nMapperRegistry" : instance
+mappers.AbstractMapper ..> "mappers.<<singleton>>\nMapperRegistry" : <<gets mapper from>>
+mappers.BookingMapper ..> mappers.EventMapper : <<gets event info from>>
+mappers.BookingMapper ..> mappers.SectionMapper : <<gets section info from>>
+mappers.EventMapper ..> mappers.VenueMapper : <<gets venue info from>>
+mappers.EventMapper ..> mappers.UserMapper : <<gets planner info from>>
+
+mappers.EventMapper ..> "mappers. EventMapper.«static»\nViewAllEvents" : <<makes queries with>>
+mappers.EventMapper ..> "mappers. EventMapper.«static»\nFindEventsByName" : <<makes queries with>>
+mappers.EventMapper ..> "mappers. EventMapper.«static»\nFindEventsByVenue" : <<makes queries with>>
+
+mappers.EventSectionMapper ..> "mappers. EventSectionMapper.«static»\nViewAllEventSections" : <<makes queries with>>
+mappers.EventSectionMapper ..> "mappers. EventSectionMapper.«static»\nFindEventSectionByEvent" : <<makes queries with>>
+
+mappers.SectionMapper ..> "mappers. SectionMapper.«static»\nViewAllSection" : <<makes queries with>>
+mappers.SectionMapper ..> "mappers. SectionMapper.«static»\nfindByVenue" : <<makes queries with>>
+
+mappers.UserMapper ..> "mappers. UserMapper.«static»\nViewAllUsers" : <<makes queries with>>
+
+mappers.VenueMapper ..> "mappers. VenueMapper.«static»\nFindVenuesByName" : <<makes queries with>>
+mappers.VenueMapper ..> "mappers. VenueMapper.«static»\nViewAllVenues" : <<makes queries with>>
+
+mappers.AbstractMapper ..> PostgreSQL : "<<saves into/\nretrieves from>>"
+mappers.UserMapper ..> PostgreSQL : <<manages user token>>
+
+"mappers. UserMapper.«static»\nViewAllUsers" -[hidden]d-> util.StatementSource
+mappers.EventMapper -[hidden]d-> mappers.AbstractMapper
+mappers.SectionMapper -[hidden]l-> mappers.AbstractMapper
+"mappers.<<singleton>>\nMapperRegistry" -[hidden]l-> mappers.AbstractMapper
+mappers.AbstractMapper -[hidden]r-> PostgreSQL
+mappers -[hidden]d-> util
+mappers -[hidden]d-> util.StatementSource
+mappers.UserMapper -[hidden]d-> util.StatementSource
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+class mappers.lazyLoad.ValueHolder {
+  - value : Object
+  - loader : ValueLoader
+  + ValueHolder(loader : ValueLoader)
+  + getValue() : Object
+}
+interface mappers.lazyLoad.ValueLoader {
+  load(conn : Connection) : Object
+}
+
+' mappers
+class mappers.EventSectionMapper extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  + viewAll() : List
+  + findByEvent(pattern : UUID) : List
+}
+class mappers.lazyLoad.SectionLoader implements mappers.lazyLoad.ValueLoader {
+  - sectionId : UUID
+  + SectionLoader(id : UUID)
+  + load(conn : Connection) : Object
+}
+
+class mappers.SectionMapper extends mappers.AbstractMapper {
+  - (SQL script Strings…) {readOnly}
+  conn : Connection = DBUtil.connection()
+  + viewAll() : List
+  + findByVenue(pattern : UUID) : List
+  + {static} List<Section> deleteSectionsByVenue(venueId : UUID, conn : Connection)
+}
+
+class objects.EventSection extends objects.DomainObject {
+    - price : Double = null
+    - availability : Integer= null
+    - section : ValueHolder
+    + getSection() : Object
+    + setSection(section : ValueHolder) : void
+}
+class objects.Section extends objects.DomainObject {
+  - venueID : UUID = null
+  - type : String = null
+  - capacity : Integer = null
+}
+
+objects.EventSection "1"*--"1" mappers.lazyLoad.ValueHolder
+mappers.lazyLoad.ValueHolder "1"*--"1" "<<interface>>\nValueLoader"
+mappers.lazyLoad.SectionLoader ..> mappers.SectionMapper : <<gets value from>>
+mappers.lazyLoad.SectionLoader ..> objects.Section : "<<outputs>>"
+
+mappers.EventSectionMapper ..> objects.EventSection : <<maps from/to DB data>>
+mappers.SectionMapper ..> objects.Section : "<<maps from/to DB data>>\n\n\n"
+
+@enduml

@@ -1,0 +1,117 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+' util
+class "util.«singleton»\nDBUtil" #ddddff {
+  <color:darkRed>-{static} conn : ThreadLocal<Connection> =\n　　<color:darkRed>ThreadLocal.withInitial(() -> { return connection(); })
+  + {static} connection() : Connection
+  + {static} Connection closeConnection()
+  + {static} void getConnection()
+  + {static} readSQL(SQL_LOCATION : String) : String
+  + {static} initTables() : void
+  + {static} cleanUp(s : PreparedStatement, rs : ResultSet) : void
+  + {static} cleanUp(s : PreparedStatement) : void
+}
+"util.«singleton»\nDBUtil" "1"-d->"1" "util.«singleton»\nDBUtil" : instance
+interface util.StatementSource {
+  sqlQuery() : String 
+  parameters() : Object[]
+}
+class "util.«singleton»\nUnitOfWork" #ddddff {
+  - {static} current : ThreadLocal = new ThreadLocal()
+  <color:darkBlue>--{static} conn : Connection = DBUtil.connection()--
+  - newObjects : List = new ArrayList()
+  - dirtyObjects : List = new ArrayList()
+  - removedObjects : List = new ArrayList()
+  + registerNew(object : DomainObject) : void
+  + registerDirty(object : DomainObject) : void
+  + registerRemoved(object : DomainObject) : void
+  + registerClean(object : DomainObject) : void
+  <color:darkBlue>+commit() : void
+  <color:darkRed>+rollback() : void
+  - insertNew() : void
+  - updateDirty() : void
+  - deleteRemoved() : void
+  + {static} newCurrent() : void
+  + {static} setCurrent(UnitOfWork uow) : void
+  + {static} getCurrent() : UnitOfWork
+  <color:darkBlue>--+{static} getConn() : Connection--
+}
+"util.«singleton»\nUnitOfWork" "1"-->"1" "util.«singleton»\nUnitOfWork" : current
+
+' mappers
+abstract mappers.AbstractMapper #ddddff {
+  {static} conn : Connection = DBUtil.connection()
+  + getConn() : Connection
+  # loadedMap : Map = new HashMap()
+  + find(key : Key) : DomainObject
+  + findMany(source : StatementSource) : List<DomainObject> 
+  # doFind(key : Key, finder : PreparedStatement) : void
+  # load(rs : ResultSet) : DomainObject
+  # load(key : Key, rs : ResultSet) : DomainObject
+  # loadAll(rs : ResultSet) : List<DomainObject> 
+  {abstract} # doLoad(key : Key, rs : ResultSet) : DomainObject
+  # addKey(rs : ResultSet) : Key
+  + insert(object : DomainObject, conn : Connection) : Key
+  {abstract} # insertData(object : DomainObject,\n　　statement : PreparedStatement) : void
+  # insertKey(object : DomainObject,\n　　statement : PreparedStatement) : void
+  <color:darkBlue>+update(object : DomainObject, conn : Connection) : void
+  {abstract} # doUpdate(object : DomainObject,\n　　statement : PreparedStatement) : void
+  + delete(key : Key, conn : Connection) : void
+  # doDelete(key : Key, statement : PreparedStatement) : void
+  {abstract} # findStatement() : String
+  {abstract} # insertStatement() : String
+  {abstract} # updateStatement() : String
+  {abstract} # deleteStatement() : String
+}
+class "mappers.<<singleton>>\nMapperRegistry" {
+  - {static} instance : MapperRegistry
+  {static} mappers : Map<Class<?>, AbstractMapper>
+  + {static} getInstance() : MapperRegistry
+  - registerMapper() : void
+  + <T extends AbstractMapper> getMapper(o : Object) : T
+}
+
+' objects
+class objects.PKCounts.Key {
+  - pks : Object[]
+  + Key(pks : Object[])
+  + Key(uuid : UUID)
+  + getPks() : Object[]
+  + getKey(i : int) : Object
+  + getId() : UUID
+  + equals(object : Object) : boolean
+  - checkKey(keyFields : Object[]) : void
+}
+class objects.DomainObject {
+  - primaryKey : Key
+  # DomainObject()
+  # DomainObject(primaryKey : Key)
+  + markNew() : void
+  + markClean() : void
+  + markDirty() : void
+  + markRemoved() : void
+}
+objects.DomainObject "1" *-- "1" objects.PKCounts.Key : contains
+
+database PostgreSQL
+
+"util.«singleton»\nUnitOfWork" ..> "util.«singleton»\nDBUtil" : <<gets DB connection via>>
+"mappers.<<singleton>>\nMapperRegistry" "1"-->"*" mappers.AbstractMapper : holds
+"util.«singleton»\nUnitOfWork" ..> "mappers.<<singleton>>\nMapperRegistry" : "<<gets mapper from>>\n\n\n\n\n"
+"util.«singleton»\nUnitOfWork" ..> mappers.AbstractMapper : <<commits changes to>>
+"util.«singleton»\nUnitOfWork" --> objects.DomainObject : Has on register
+mappers.AbstractMapper ..> "util.«singleton»\nDBUtil" : <<uses>>
+mappers.AbstractMapper ..> PostgreSQL : "<<saves into/\nretrieves from>>"
+mappers.AbstractMapper ..> objects.PKCounts.Key : <<maps to\nDB data>>
+mappers.AbstractMapper --> objects.PKCounts.Key : "creates via\nDB DB\ndata"
+mappers.AbstractMapper --> objects.DomainObject : creates via\nDB data
+mappers.AbstractMapper ..> objects.DomainObject : <<maps to\nDB data>>
+mappers.AbstractMapper --> util.StatementSource : "<<makes custom SQL commands with>>\n\n\n\n\n\n\n\n\n"
+
+"util.«singleton»\nDBUtil" -[hidden]d-> "util.«singleton»\nUnitOfWork"
+"util.«singleton»\nUnitOfWork" -[hidden]d-> util.StatementSource
+
+@enduml

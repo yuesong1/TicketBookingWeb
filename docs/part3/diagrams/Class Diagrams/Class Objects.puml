@@ -1,0 +1,108 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+' skinparam linetype ortho
+' domain ..> util.«singleton»\nUnitOfWork
+' "util.«singleton»\nUnitOfWork" ..> mappers
+' domain --> util.DomainUtil
+
+' objects
+class objects.DomainObject {
+  - primaryKey : Key
+  # DomainObject()
+  # DomainObject(primaryKey : Key)
+  + markNew() : void
+  + markClean() : void
+  + markDirty() : void
+  + markRemoved() : void
+}
+class objects.PKCounts.Key {
+  - pks : Object[]
+  + Key(pks : Object[] )
+  + Key(uuid : UUID)
+  + getPks() : Object[]
+  + getKey(i : int) : Object
+  + getId() : UUID
+  + equals(object : Object) : boolean
+  - checkKey(keyFields : Object[]) : void
+}
+objects.DomainObject "1" *-- "1" objects.PKCounts.Key : contains
+' objects.DomainObject ..> util.«singleton»\nUnitOfWork
+class objects.Admin extends objects.User {
+}
+class objects.Booking #ddddff extends objects.DomainObject {
+    - section : Section = null
+    - numTickets : Integer = null
+    - customerEmail : String = null
+    - event : Event = null
+    <color:darkRed>-version : Integer = null
+}
+objects.Booking "*"-"1" objects.Section : [Section seats > Booking]
+class objects.Customer extends objects.User {
+  - bookings : List<Booking> = new ArrayList<>()
+}
+objects.Customer "1"-"*" objects.Booking : [Booking booked by > Customer]
+class objects.Event extends objects.DomainObject {
+    - name : String = null
+    - venue : Venue = null
+    - startDateTime : LocalDateTime = null
+    - endDateTime : LocalDateTime = null
+    - artist : String = null
+    - description : String = null
+    - List<Booking> bookings = new ArrayList<>()
+    - eventSections : List<EventSection> = new ArrayList<>()
+    - plannerEmails : List<String>= new ArrayList<>()
+    - planners : List<Planner> = new ArrayList<>()
+    - eventSectionString() : String
+    + plannerEmailsString() : String
+    + toString() : String
+}
+class objects.EventSection #ddddff extends objects.DomainObject {
+    - price : Double = null;
+    - availability : Integer = null
+    - section : ValueHolder
+    <color:darkRed>-version : Integer = null;
+    + getSection() : Object
+    + setSection(section : ValueHolder) : void
+}
+class objects.Planner extends objects.User {
+}
+objects.Planner "1..*"-"*" objects.Event : [Planner plans\nv\nEvent]
+class objects.Section extends objects.DomainObject {
+  - venueID : UUID = null;
+  - type : String = null
+  - capacity : Integer = null;
+}
+objects.Event "1"-"*" objects.Booking : [Event is booked by > Booking]
+objects.Event "1"-"1..*" objects.EventSection : [Event has > EventSection]
+class objects.User extends objects.DomainObject implements UserDetails {
+  - role : UserAccess = null;
+  - password : String = null;
+  - token : String = null;
+  + getEmail() : String
+  + setEmail(email : String) : void
+  + getAuthorities() : Collection<? extends GrantedAuthority>
+}
+enum "objects.<<enum>>\nUserAccess" implements GrantedAuthority {
+  customer
+  planner
+  admin
+  + getAuthority() : String
+}
+objects.User "*"*--"1" "objects.<<enum>>\nUserAccess"
+class objects.Venue #ddddff extends objects.DomainObject {
+  - name : String = null
+  - address : String = null
+  - sections : List<Section> = new ArrayList<>()
+  - events : List<Event> = new ArrayList<>()
+  <color:darkRed>-version: Integer
+}
+objects.Venue "1"-"1..*" objects.Section : [Venue contains\nv\nSection]
+objects.Venue "1"-d-"*" objects.Event : [Venue hosts > Event]
+
+objects.Event -[hidden]d-> objects.EventSection
+objects.Planner -[hidden]d-> objects.Customer
+objects.Admin -[hidden]d-> objects.Customer
+
+@enduml

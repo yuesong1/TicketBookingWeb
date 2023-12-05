@@ -1,0 +1,49 @@
+@startuml entity
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "Bookings" as e01 {
+  *id : UUID <<generated>>
+  --
+  *<color:darkRed>eventID : UUID <<FK>>
+  *<color:darkGreen>sectionID : UUID <<FK>>
+  *<color:darkBlue>customerEmail : VARCHAR(80) <<FK>>
+  *ticketNum : int
+}
+
+entity "Events" as e04 {
+  *<color:darkRed>id : UUID <<generated>>
+  --
+  *venueID: UUID <<FK>>
+  *name : VARCHAR(80)
+  *artist : VARCHAR(80)
+  *startDateTime : TIMESTAMPTZ
+  *endDateTime : TIMESTAMPTZ
+  description : VARCHAR(80)
+}
+
+entity "Sections" as e02 {
+  *<color:darkGreen>id : UUID <<generated>>
+  --
+  *venueID: UUID <<FK>>
+  *type : VARCHAR(80)
+  *capacity : INTEGER
+}
+
+entity "Users" as e03 {
+  *<color:darkBlue>email : VARCHAR(80)
+  --
+  *password : UUID
+  *type : USERACCESS
+}
+
+e01 }|-- e03
+e01 }|-- e02
+e01 }|-- e04
+
+
+@enduml

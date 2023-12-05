@@ -1,0 +1,119 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+top to bottom direction
+
+interface application.Command #ffcccc {
+}
+class application.BusinessTransactionCommand #ffcccc implements application.Command {
+}
+class application.ReleaseAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.SavedVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.UpdateVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ViewAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ReleaseEventCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+' package application #ffcccc
+
+class controllers.Home {
+
+}
+class controllers.bookings.CreateBooking {
+
+}
+class controllers.bookings.DeleteBooking {
+
+}
+class controllers.bookings.ViewBooking {
+
+}
+class controllers.events.CreateEvent #ddddff {
+  # doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  <color:darkBlue>#doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.events.DeleteEvent {
+
+}
+class controllers.events.UpdateEvent {
+
+}
+class controllers.events.ViewEvent {
+
+}
+class controllers.users.Login {
+
+}
+
+' together {
+  package mappers
+'   class "util.«singleton»\nDBUtil"
+' }
+class "util.«singleton»\nDBUtil" #ddddff
+package util #ddddff
+
+' controllers.users.Login ..> "mappers.<<singleton>>\nMapperRegistry"
+' controllers.users.Login ..> mappers.UserMapper
+class controllers.users.Logout {
+
+}
+class controllers.users.Signup {
+
+}
+class controllers.users.ViewUser {
+
+}
+class controllers.venues.CreateVenue {
+
+}
+
+class controllers.venues.DeleteVenue {
+
+}
+class controllers.venues.UpdateVenue #ddddff {
+  <color:darkBlue>#doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  <color:darkBlue>#doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+class controllers.venues.ViewVenue #ddddff {
+  <color:darkBlue>#doGet(request : HttpServletRequest, response : HttpServletResponse) : void
+  <color:darkRed>#doPost(request : HttpServletRequest, response : HttpServletResponse) : void
+}
+
+controllers.events.CreateEvent .u.> application.ReleaseEventCommand : <<POST>>
+controllers.venues.UpdateVenue .u.> application.UpdateVenueCommand : <<GET>>
+controllers.venues.UpdateVenue .u.> application.SavedVenueCommand : <<POST>>
+controllers.venues.ViewVenue .u.> application.ViewAllVenueCommand : <<GET>>
+controllers.venues.ViewVenue .u.> application.ReleaseAllVenueCommand : <<POST>>
+
+application.UpdateVenueCommand ...> mappers
+application.ViewAllVenueCommand ..> domain.VenueLogic
+application.SavedVenueCommand ..> domain.VenueLogic
+application.ReleaseEventCommand ..> domain.EventLogic
+
+controllers.users.Login .u..> "util.«singleton»\nDBUtil"
+controllers.users.Login .u..> mappers
+controllers.venues .u.> domain.VenueLogic
+controllers.users .u.> domain.UserLogic
+controllers.bookings .u.> domain.BookingLogic
+controllers.events .u.> domain.EventLogic
+
+' controllers.venues -[hidden]d-> controllers.events
+' domain.UserLogic -[hidden]d-> domain.VenueLogic
+' domain.VenueLogic -[hidden]d-> domain.EventLogic
+' domain.EventLogic -[hidden]d-> domain.BookingLogic
+mappers -[hidden]r-> "util.«singleton»\nDBUtil"
+controllers.venues.ViewVenue -[hidden]d-> controllers.venues.UpdateVenue
+controllers.venues.UpdateVenue -[hidden]d-> controllers.venues.DeleteVenue
+controllers.venues.UpdateVenue -[hidden]d-> controllers.venues.CreateVenue
+controllers.events.CreateEvent -[hidden]d-> controllers.events.DeleteEvent
+controllers.events.CreateEvent -[hidden]d-> controllers.events.UpdateEvent
+controllers.events.CreateEvent -[hidden]d-> controllers.events.ViewEvent
+
+@enduml

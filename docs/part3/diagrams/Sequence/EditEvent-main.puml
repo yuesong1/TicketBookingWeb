@@ -1,0 +1,57 @@
+@startuml sequenceDiagram
+  participant Frontend as FE
+  participant "controllers/.../\nViewEvent" as cve
+  participant "controllers/.../\nUpdateEvent" as cue
+  participant "eventLogic\n:EventLogic" as el
+  participant "es\n:EventSection" as es
+  participant "mapper\n:EventMapper" as em
+  participant "<<Singleton>>\nUnitOfWork" as uw
+  
+  ' participant "mapper\n:VenueMapper" as VM
+  ' participant "plannerEvent\n:Object[]" as Sc
+  ' participant "e\n:Event" as Vn
+  ' participant "<color:darkRed>allEvents\n<color:darkRed>:Map<UUID, Event>" as AV
+
+  activate FE
+    FE->>cve: doGet(request0, response0)
+    activate cve
+      cve-->>FE: Event object, including\nEventSections' version
+    deactivate cve
+    FE->>cue: doPut(request1, response1)
+    activate cue
+      create el
+      cue->>el: updateEvent(request1)
+      activate el
+        ref over el, uw
+          Update & mark
+          Event object
+          on UoW
+        end ref
+        loop for (EventSection es : eventSections)
+          create es
+          el->>es: markDirty()
+          activate es
+            es->>uw: getCurrent().registerDirty(es)
+            activate uw
+            deactivate uw
+          deactivate es
+        end
+        ref over el, em
+          Update
+          PlannerEvents
+        end ref
+        el->>uw: getCurrent().commit()
+          ref over uw
+            Commit updating
+            EventSections
+          end ref
+        alt OptimisticLockingException
+          el-->>cue: OptimisticLockingException
+          cue-->>FE: 400 Bad Request
+        else
+          cue-->>FE: 201 Created
+        end
+      deactivate el
+    deactivate cue
+  deactivate FE
+@enduml

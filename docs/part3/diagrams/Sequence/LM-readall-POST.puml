@@ -1,0 +1,14 @@
+@startuml sequenceDiagram
+  participant "cmd\n:Command" as cmd
+  participant "lock\n:ReadWriteLockManager" as lm
+  database PostgreSQL as db
+
+  activate cmd
+    cmd->>lm: releaseReadAllLock()
+    activate lm
+      lm->>db: DELETE FROM lock WHERE version = <ALL>;
+      activate db
+      deactivate db
+    deactivate lm
+  deactivate cmd
+@enduml

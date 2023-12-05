@@ -1,0 +1,65 @@
+@startuml sequenceDiagram
+  participant Frontend as FE
+  participant "controllers/.../\nUpdateVenue" as cuv
+  participant "cmd\n:Command" as cmd
+  participant "VenueLogic" as vl
+  participant "lock\n:ReadWriteLockManager" as lm
+  participant "<<Singleton>>\nUnitOfWork" as uw
+  participant DBUtil
+  
+  ' participant "mapper\n:VenueMapper" as VM
+  ' participant "plannerEvent\n:Object[]" as Sc
+  ' participant "e\n:Event" as Vn
+  ' participant "<color:darkRed>allEvents\n<color:darkRed>:Map<UUID, Event>" as AV
+
+  activate FE
+    FE->>cuv: doGet(request, response)
+    activate cuv
+      create cmd
+      cuv->>cmd: cmd = new SavedVenueCommand()
+      cuv->>cmd: init(request, response)
+      activate cmd
+      deactivate cmd
+      cuv->>cmd: process()
+      activate cmd
+        ref over cmd #ffffff
+          // Session management
+          continueBusinessTransaction()
+        end ref
+
+        cmd->>vl: updateVenue(getReq())
+        activate vl
+        deactivate vl
+
+        create lm
+        cmd->>lm: lock = ReadWriteLockManager.getInstance()
+
+        ref over lm
+          Release write-one lock
+        end ref
+        cmd->>lm: lock.releaseWriteLock(venueID)
+        alt Lock released
+          cmd->>uw: getCurrent().commit()
+          ref over uw, DBUtil
+            UoW commits
+          end ref
+          cmd->>DBUtil: getConnection().closeConnection()
+            activate DBUtil
+            deactivate DBUtil
+          cuv->>FE: 201 Created
+        else SQLException
+          cmd->>DBUtil: getConnection().rollback()
+            activate DBUtil
+            deactivate DBUtil
+          cmd->>DBUtil: getConnection().closeConnection()
+            activate DBUtil
+            deactivate DBUtil
+          cmd-->>cuv: SQLException
+          cuv-->>FE: 400 Bad Request
+        end
+      deactivate cmd
+      activate cuv
+      deactivate cuv
+    deactivate cuv
+  deactivate FE
+@enduml

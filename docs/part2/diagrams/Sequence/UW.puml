@@ -1,0 +1,54 @@
+@startuml sequenceDiagram
+    participant Frontend as FE
+    participant Controller as Con
+    participant "o\n:DomainObject" as DO
+    participant "UnitOfWork" as UW
+    participant "<<Singleton>>\nMapperRegistry" as MR
+    participant "mapper\n:AbstractMapper" as AM
+    database PostgreSQL as DB
+
+    activate FE
+
+    FE->>Con: POST /create-object
+    create DO
+    activate Con
+    create UW
+    Con->>UW: newCurrent()
+    create DO
+    Con->>DO: create(data)
+    activate DO
+    DO->>UW: registerNew(this)
+    activate UW
+    deactivate UW
+    deactivate DO
+    Con->>UW: commit()
+    activate UW
+    UW->>UW: insertNew()
+    activate UW
+    loop for DomainObject o: newObjects
+      UW->>DO: getClass()
+      activate DO
+      DO-->>UW: o.class
+      deactivate DO
+      UW->>MR: getMapper(class)
+      activate MR
+      MR-->>UW: mapper
+      deactivate MR
+      UW->>AM: insert(o, connection)
+      activate AM
+      AM->>DB: insertStatement.executeQuery()
+      activate DB
+      DB-->>AM: resultSet
+      deactivate DB
+      AM->>DO: setPrimaryKey(pk)
+      activate DO
+      deactivate DO
+      deactivate AM
+    end
+    deactivate UW
+    break
+    deactivate UW
+    Con-->>FE: 200 OK
+    deactivate Con
+    deactivate FE
+@enduml

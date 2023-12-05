@@ -1,0 +1,72 @@
+@startuml sequenceDiagram
+  participant Frontend as FE
+  participant "controllers/.../\nUpdateVenue" as cuv
+  participant "cmd\n:Command" as cmd
+  participant "VenueMapper" as vm
+  participant "<<Singleton>>\nAppSessionManager" as sm
+  participant "lock\n:ReadWriteLockManager" as lm
+  participant "<<Singleton>>\nUnitOfWork" as uw
+  participant DBUtil
+  
+  ' participant "mapper\n:VenueMapper" as VM
+  ' participant "plannerEvent\n:Object[]" as Sc
+  ' participant "e\n:Event" as Vn
+  ' participant "<color:darkRed>allEvents\n<color:darkRed>:Map<UUID, Event>" as AV
+
+  activate FE
+    FE->>cuv: doGet(request, response)
+    activate cuv
+      create cmd
+      cuv->>cmd: cmd = new ViewAllVenueCommand()
+      cuv->>cmd: init(request, response)
+      activate cmd
+      deactivate cmd
+      cuv->>cmd: process()
+      activate cmd
+        ref over cmd, sm
+          // Initialise session
+          startNewBusinessTransaction()
+        end ref
+        create lm
+        cmd->>lm: lock = ReadWriteLockManager.getInstance()
+        cmd->>sm: getSession().getId()
+        activate sm
+          sm-->>cmd: sessionID
+        deactivate sm
+        cmd->>lm: lock.acquireWriteLock(venueID, sessionID)
+        ref over lm
+          Acquire write-one lock
+        end ref
+        alt Lock acquired
+          cmd->>vm: find(venueID)
+          activate vm
+            vm-->>cmd: venue
+          deactivate vm
+          cmd->>cmd: getReq().getSession()\n　　.setAttribute("venue", venue)
+          activate cmd
+          deactivate cmd
+      cmd->>uw: getCurrent().commit()
+      ref over uw, DBUtil
+        UoW commits
+      end ref
+          cmd->>DBUtil: getConnection().closeConnection()
+            activate DBUtil
+            deactivate DBUtil
+          cuv->>cuv: output = request.getSession()\n　　.getAttribute("venue").toString()
+          cuv->>FE: 200 OK, output
+        else ConcurrencyException
+          cmd->>DBUtil: getConnection().rollback()
+            activate DBUtil
+            deactivate DBUtil
+          cmd->>DBUtil: getConnection().closeConnection()
+            activate DBUtil
+            deactivate DBUtil
+          cmd-->>cuv: LockFailureException
+          cuv-->>FE: 400 Bad Request
+        end
+      deactivate cmd
+      activate cuv
+      deactivate cuv
+    deactivate cuv
+  deactivate FE
+@enduml

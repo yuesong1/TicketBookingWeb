@@ -1,0 +1,48 @@
+/* BookTicket.css */
+
+.book-ticket-container {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .card-media {
+    background-size: cover;
+  }
+  
+  .card-content {
+    padding: 16px;
+  }
+  
+  .section-card {
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .selected-section {
+    border: 2px solid #1976d2;
+    background-color: #e3f2fd;
+    display: flexbox;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+    padding: 20px
+
+  }
+  
+  .section-info {
+    margin: 10px;
+  }
+  
+  .num-tickets-input {
+    margin: 10px;
+    width: 200px;
+    align-self: center;
+  }
+
+  .book-button {
+    margin:10px;
+  }
+  

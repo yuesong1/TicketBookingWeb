@@ -1,0 +1,40 @@
+@startuml sequenceDiagram
+    participant UI as UI
+    participant WebSecurity as Web
+    participant TokenAuthenticationFilter as Auth
+    participant Controller as Con
+    participant JwtTokenUtil as Jwt
+    participant UserMapper as Map
+
+    activate UI
+      UI->>Web: HTTP Request { Headers: "Bearer <token>" }
+      activate Web
+      Web->>Auth:  HTTP Request { … }
+      activate Auth
+        alt request sent to paths "/login", "/sign-up" or "/"
+          Auth->>Con: HTTP Request { … }
+          activate Con
+          Con-->>UI: (request response after processing)
+          deactivate Con
+        else requested to paths that need authentication & authorization
+          Auth->>JwtTokenUtil: validateToken(token)
+          JwtTokenUtil-->>Auth: token is valid/invalid
+          alt token is invalid
+            Auth-->>UI: 401 Unauthorized
+          else token is valid
+            Auth->>JwtTokenUtil: getRoleFromToken(token)
+            JwtTokenUtil-->>Auth: userRole
+            alt userRole == "admin" && request sent to an admin-disallowed path\n|| userRole == "customer" && request sent to a customer-disallowed path\n|| userRole == "planner" && request sent to a planner-disallowed path
+              Auth-->>UI: 403 Forbidden
+            else request sent to user-allowed path
+              Auth->>Con: HTTP Request { … }
+              activate Con
+              Con-->>UI: (request response after processing)
+              deactivate Con
+          end
+        end
+        deactivate Auth
+      deactivate Web
+    deactivate UI    
+
+@enduml

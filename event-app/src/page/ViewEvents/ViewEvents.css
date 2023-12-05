@@ -1,0 +1,13 @@
+/* ViewEvents.css */
+
+.button-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+.search-bar {
+  margin: 20px;
+  width: 50%;
+  display: inline-flex;
+}
+  

@@ -1,0 +1,26 @@
+@startuml sequenceDiagram
+    participant EventLogic as Con
+    ' participant "mapper\n:VenueMapper" as VM
+    participant "plannerEvent\n:Object[]" as Sc
+    participant "e\n:Event" as Vn
+    participant "<color:darkRed>allEvents\n<color:darkRed>:Map<UUID, Event>" as AV
+
+    activate Con
+    loop for (Object plannerEvent: plannerEventList)
+      Con->>Sc: (UUID) plannerEvent[1]
+      activate Sc
+      Sc-->>Con: plannerEmail
+      deactivate Sc
+      Con->>Sc: (UUID) plannerEvent[0]
+      activate Sc
+      Sc-->>Con: eventID
+      deactivate Sc
+      Con->>AV: get(eventID)
+      AV-->>Con: e
+      Con->Vn: addPlannerEmail(plannerEmail)
+      activate Vn
+      deactivate Vn
+    end
+    
+
+@enduml

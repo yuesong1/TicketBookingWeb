@@ -1,0 +1,38 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "Sections" as e01 {
+  *id : UUID <<generated>>
+  --
+  *<color:darkRed>venueID: UUID <<FK>>
+  *type : VARCHAR(80)
+  *capacity : INTEGER
+}
+
+entity "Venues" as e04 {
+  *<color:darkRed>id : UUID <<generated>>
+  --
+  *name : VARCHAR(80)
+  *address : VARCHAR(80)
+}
+
+entity "Events" as e03 {
+  *id : UUID <<generated>>
+  --
+  *<color:darkRed>venueID: UUID <<FK>>
+  *name : VARCHAR(80)
+  *artist : VARCHAR(80)
+  *startDateTime : TIMESTAMPTZ
+  *endDateTime : TIMESTAMPTZ
+  description : VARCHAR(80)
+}
+
+e01 }|-- e04
+e03 }|-- e04
+
+@enduml

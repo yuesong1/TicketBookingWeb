@@ -1,0 +1,140 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+together {
+  interface application.Command #ffcccc {
+  + init(req : HttpServletRequest,
+  　　rsp : HttpServletResponse) : void
+  + process() : void
+}
+class application.BusinessTransactionCommand #ffcccc implements application.Command {
+  + APP_SESSION : String = "appSession"
+  + LOCK_REMOVER : String = "removeLock"
+  # req : HttpServletRequest
+  # rsp : HttpServletResponse
+  # startNewBusinessTransaction() : void
+  # continueBusinessTransaction() : void
+}
+}
+class application.ReleaseAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ReleaseEventCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.SavedVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.UpdateVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+class application.ViewAllVenueCommand #ffcccc extends application.BusinessTransactionCommand {
+}
+' package application #ffcccc
+
+class domain.BookingLogic #ddddff {
+  {static} esMapper : EventSectionMapper = \n　　MapperRegistry.getInstance()\n　　.getMapper(EventSection.class)
+  <color:darkRed>{static} mapper : BookingMapper = \n<color:darkRed>　　MapperRegistry.getInstance()\n　　.getMapper(Booking.class)
+  <color:darkBlue>+{static} createBookings(\n　　request : HttpServletRequest) : Booking
+  + {static} viewBookingsByEvent(\n　　eventID : String) : List<Booking>
+  + {static} viewBookingsByCustomer(\n　　customerEmail : String) : List<Booking>
+  <color:darkBlue>+{static} deleteBooking(\n　　idStr : String) : void
+  <color:darkBlue>+{static} bookingInstant(\n　　request : HttpServletRequest) : Booking
+}
+class domain.EventLogic #ddddff {
+  {static} mapper : EventMapper =\n　　MapperRegistry.getInstance()\n　　.getMapper(Event.class)
+  {static} esMapper : EventSectionMapper =\n　　MapperRegistry.getInstance()\n　　.getMapper(EventSection.class)
+
+  <color:darkBlue>+createEvent(request : HttpServletRequest) : Event
+  - addEventSections(requestedE : Event,\n　　eSections : List<EventSection>) : void
+  - addPlanner(requestedE : Event, create : boolean) : void
+  <color:darkBlue>-checkVenueAvail(venue : Venue,\n　　<color:darkBlue>startDateTime : LocalDateTime,\n　　<color:darkBlue>endDateTime : LocalDateTime) : boolean
+  <color:darkBlue>+updateEvent(request : HttpServletRequest) : Event
+  <color:darkRed>-checkUpdateVenueAvail(venue : Venue,\n　　<color:darkRed>startDateTime : LocalDateTime,\n　　<color:darkRed>endDateTime : LocalDateTime,\n　　<color:darkRed>eventID : String) : boolean
+  + {static} deleteEvent(idStr : String) : Event
+  + {static} viewOne(idStr : String) : Event
+  + {static} viewAll() : List<Event>
+  + {static} view6Month() : List<Event>
+  + {static} viewSearch(input : String) : List<Event>
+  + {static} eventInstant(request : HttpServletRequest) : Event
+  + {static} parseVenue(e : Event, venueObj : Object) : Event
+  + {static} parseSection(secObj : Object,\n　　eID : UUID) : List<EventSection>
+  + viewByPlanner(emailStr : String) : List<Event> 
+  + {static} compareESections(requested : List<EventSection>,\n　　original : List<EventSection>) : void
+}
+class domain.UserLogic {
+}
+class domain.VenueLogic {
+}
+class "util.«singleton»\nUnitOfWork" #ddddff {
+  - {static} current : ThreadLocal = new ThreadLocal()
+  <color:darkBlue>--{static} conn : Connection = DBUtil.connection()--
+  - newObjects : List = new ArrayList()
+  - dirtyObjects : List = new ArrayList()
+  - removedObjects : List = new ArrayList()
+  + registerNew(object : DomainObject) : void
+  + registerDirty(object : DomainObject) : void
+  + registerRemoved(object : DomainObject) : void
+  + registerClean(object : DomainObject) : void
+  <color:darkBlue>+commit() : void
+  <color:darkRed>+rollback() : void
+  - insertNew() : void
+  - updateDirty() : void
+  - deleteRemoved() : void
+  + {static} newCurrent() : void
+  + {static} setCurrent(UnitOfWork uow) : void
+  + {static} getCurrent() : UnitOfWork
+  <color:darkBlue>--+{static} getConn() : Connection--
+}
+"util.«singleton»\nUnitOfWork" "1"-->"1" "util.«singleton»\nUnitOfWork" : current
+class "util.«singleton»\nDBUtil" #ddddff {
+  <color:darkRed>-{static} conn : ThreadLocal<Connection> =\n<color:darkRed>　　ThreadLocal.withInitial(() -> { return connection(); })
+  + {static} connection() : Connection
+  + {static} Connection closeConnection()
+  + {static} void getConnection()
+  + {static} readSQL(SQL_LOCATION : String) : String
+  + {static} initTables() : void
+  + {static} cleanUp(s : PreparedStatement, rs : ResultSet) : void
+  + {static} cleanUp(s : PreparedStatement) : void
+}
+"util.«singleton»\nDBUtil" "1"-->"1" "util.«singleton»\nDBUtil" : instance
+class objects.DomainObject {
+  - primaryKey : Key;
+  # DomainObject()
+  # DomainObject(primaryKey : Key)
+  + markNew() : void
+  + markClean() : void
+  + markDirty() : void
+  + markRemoved() : void
+}
+
+package mappers #ddddff
+domain .r.> util : <<uses>>
+
+domain ..> mappers : <<reads objects\nfrom>>
+domain .r.> "util.«singleton»\nUnitOfWork" : <<registers changes to>>
+domain .u.> objects : <<creates/\nobtains>>
+"util.«singleton»\nUnitOfWork" ..> mappers : <<commits changes to>>
+application ..> mappers : <<reads objects\nfrom>>
+application .r.> "util.«singleton»\nUnitOfWork" : <<registers changes to>>
+application .u.> objects : <<creates/\nobtains>>
+' "util.«singleton»\nUnitOfWork" ..> "util.«singleton»\nDBUtil" : <<uses>>
+"util.«singleton»\nUnitOfWork" -u-> objects.DomainObject : has on register
+
+domain.EventLogic -[hidden]d-> domain.BookingLogic
+domain.VenueLogic -[hidden]u-> domain.UserLogic
+
+domain -[hidden]d-> application
+domain.BookingLogic -[hidden]d-> application.Command
+domain.BookingLogic -[hidden]d-> "util.«singleton»\nUnitOfWork"
+
+application.ViewAllVenueCommand -[hidden]d-> application.ReleaseAllVenueCommand
+application.ReleaseAllVenueCommand -[hidden]d-> application.ReleaseEventCommand
+
+"util.«singleton»\nUnitOfWork" .d.> "util.«singleton»\nDBUtil" : manages DB\nconnections with
+application ..> "util.«singleton»\nDBUtil" : manages DB\nconnections with
+domain ..> "util.«singleton»\nDBUtil" : manages DB\nconnections with
+
+application.ReleaseEventCommand .u.> domain.EventLogic : <<forwards\nlogic to>>
+application.ViewAllVenueCommand .u.> domain.VenueLogic : "«forwards   \nlogic to»        "
+application.SavedVenueCommand .u.> domain.VenueLogic : <<forwards\nlogic to>>
+
+@enduml

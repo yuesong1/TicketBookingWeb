@@ -1,0 +1,65 @@
+@startuml sequenceDiagram
+  participant Frontend as FE
+  participant "controllers/.../\nCreateEvent" as cce
+  participant "cmd\n:Command" as cmd
+  participant "EventLogic" as el
+  participant "lock\n:ReadWriteLockManager" as lm
+  participant "<<Singleton>>\nUnitOfWork" as uw
+  participant DBUtil
+
+  activate FE
+    FE->>cce: doPost(request, response)
+    activate cce
+      create cmd
+      cce->>cmd: cmd = new ReleaseEventCommand()
+      cce->>cmd: init(request, response)
+      activate cmd
+      deactivate cmd
+      cce->>cmd: process()
+      activate cmd
+        ref over cmd #ffffff
+          // Session management
+          continueBusinessTransaction()
+        end ref
+        create lm
+        cmd->>lm: lock = ReadWriteLockManager.getInstance()
+        cmd->>el: createEvent(getReq())
+        activate el
+        el->>cmd: Event e
+        deactivate el
+        cmd->>cmd: getReq().getSession().setAttribute("event", e);
+        activate cmd
+        deactivate cmd
+        
+          cmd->>lm: releaseReadAllLock()
+
+          ref over lm
+            Release read-all lock
+          end ref
+        
+        alt Lock released
+                cmd->>uw: getCurrent().commit()
+      ref over uw, DBUtil
+        UoW commits
+      end ref
+          cmd->>DBUtil: getConnection().closeConnection()
+          activate DBUtil
+          deactivate DBUtil
+          cce->>cce: output = request.getSession()\n　　.setAttribute("event", event)
+        activate cce
+        deactivate cce
+          cce->>FE: 201 Created, output
+        else SQLException
+          cmd->>DBUtil: getConnection().rollback()
+          activate DBUtil
+          deactivate DBUtil
+          cmd->>DBUtil: getConnection().closeConnection()
+          activate DBUtil
+          deactivate DBUtil
+          cmd-->>cce: SQLException
+          cce-->>FE: 400 Bad Request
+        end
+      deactivate cmd
+    deactivate cce
+  deactivate FE
+@enduml

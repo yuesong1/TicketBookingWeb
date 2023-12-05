@@ -1,0 +1,28 @@
+@startuml sequenceDiagram
+  ' participant "cmd/.../\nReleaseEventCommand" as cmd
+  participant "eventLogic\n:EventLogic" as el
+  ' participant "venueMapper\n:VenueMapper" as vm
+  database PostgreSQL as db
+
+  ' activate cmd
+  '   create el
+  '   cmd->>el: createEvent(request)
+    activate el
+      el->>el: checkVenueAvail(venue, startDateTime, endDateTime)\nOR\ncheckUpdateVenueAvail(Venue venue, LocalDateTime startDateTime,\n　　LocalDateTime endDateTime, String eventID)
+      activate el
+        el->>db: SELECT version FROM venues\n　　WHERE id = uuid(venueID)
+        activate db
+          db-->>el: ResultSet rs
+        deactivate db
+        alt if rs.next() && rs.rs.getInt("version") != venue.getVersion()\n// i.e. if version in database != version held by EventLogic
+          el-->>el: OptimisticLockingException
+        else version held is not outdated
+          ref over el
+            Check event times
+            at Venue
+          end ref
+        end
+      deactivate el
+    deactivate el
+  ' deactivate cmd
+@enduml

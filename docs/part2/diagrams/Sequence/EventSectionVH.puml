@@ -1,0 +1,64 @@
+@startuml sequenceDiagram
+
+participant EventController as EC
+participant EventLogic as EL
+participant EventMapper as EM
+participant EventSectionMapper as EsM
+participant "resultES\n:EventSection" as Res
+participant "sectionHolder\n:ValueHolder" as VH
+participant "sectionLoader\n:SectionLoader" as SL
+participant SectionMapper as SM
+database PostgreSQL as DB
+
+activate EC
+  EC->>EL: viewOne(String idString,\n    Boolean onlyPartialData)
+  activate EL
+    EL->>EM: find(eventKey)
+    activate EM
+      EM-->>EL: event
+    deactivate EM
+    EL->>EsM: findByEvent(eventID)
+    activate EsM
+      EsM->>DB: SELECT * FROM EventSection\n    WHERE eventID = UUID(eventIDString)
+      activate DB
+      DB-->>EsM: resultSet
+      deactivate DB
+      loop while resultSet.next()
+        create Res
+        EsM->>Res: create(price, available, key)
+        create SL
+        EsM->>SL: create(sectionID)
+        create VH
+        EsM->>VH: create(sectionLoader)
+        EsM->>Res: setSection(sectionHolder)
+        activate Res
+        deactivate Res
+      end
+      EsM-->>EL: resultESList
+    deactivate EsM
+    alt onlyPartialData == true
+      EL->>EC: event without section data
+    else onlyPartialData == false
+      loop foreach resultES in resultESList
+        EL->>Res: getSection()
+        activate Res
+          Res->>VH: getValue()
+          activate VH
+            VH->>SL: load()
+            activate SL
+              SL->>SM: find(sectionKey)
+              activate SM
+                SM-->>SL: sectionData
+              deactivate SM
+              SL-->>VH: sectionData
+            deactivate SL
+            VH-->>Res: sectionData
+          deactivate VH
+          Res->>EL: sectionData
+        deactivate Res
+      end
+      EL-->>EC: event with complete section data
+    end
+    deactivate EL
+  deactivate EC
+@enduml

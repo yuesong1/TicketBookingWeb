@@ -1,0 +1,36 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+package UI
+' interface application.Command
+package application #ffcccc
+package controllers #ddddff
+package security
+package domain #ddddff
+package mappers #ddddff
+package objects #ddddff
+class "util.«singleton»\nUnitOfWork" #ddddff
+package util #ddddff
+database PostgreSQL
+
+UI ..> security : <<requests from>>
+security ..> controllers : <<requests from>>
+controllers ..> domain : <<calls default logic>>
+controllers ..> application : <<calls logic with\npessimistic lock>>
+application ..> domain : <<forwards logic>>
+application ..> mappers : <<reads objects from>>
+application ..> objects : <<creates/\noutputs>>
+application ..> util : <<uses>>
+application ..> "util.«singleton»\nUnitOfWork" : <<registers changes to>>
+domain ..> mappers : "<<reads objects from>>                                        "
+domain ..> objects : <<creates/outputs>>
+domain ..> util : <<uses>>
+domain ..> "util.«singleton»\nUnitOfWork" : <<registers changes to>>
+mappers ..> objects : <<maps from/to DB data>>
+"util.«singleton»\nUnitOfWork" ..> mappers : <<commits changes to>>
+"util.«singleton»\nUnitOfWork" --> objects : has on register
+mappers ..> PostgreSQL : <<saves into/\nretrieves from>>
+
+@enduml

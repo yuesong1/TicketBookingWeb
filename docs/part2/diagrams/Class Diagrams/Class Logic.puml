@@ -1,0 +1,92 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+class domain.BookingLogic {
+  {static} esMapper : EventSectionMapper = MapperRegistry.getInstance().getMapper(EventSection.class)
+  + {static} createBookings(request : HttpServletRequest) : Booking
+  + {static} viewBookingsByEvent(eventID : String) : List<Booking>
+  + {static} viewBookingsByCustomer(customerEmail : String) : List<Booking>
+  + {static} deleteBooking(idStr : String) : void
+  + {static} bookingInstant(request : HttpServletRequest) : Booking
+}
+class domain.EventLogic {
+    {static} mapper : EventMapper = MapperRegistry.getInstance().getMapper(Event.class)
+    {static} esMapper : EventSectionMapper = MapperRegistry.getInstance().getMapper(EventSection.class)
+
+    + createEvent(request : HttpServletRequest) : Event
+    - addEventSections(requestedE : Event, eSections : List<EventSection>) : void
+    - addPlanner(requestedE : Event, create : boolean) : void
+    - {static} checkVenueAvail(venue : Venue, startDateTime : LocalDateTime, LocalDateTime endDateTime) : boolean
+    + updateEvent(request : HttpServletRequest) : Event
+    + {static} deleteEvent(idStr : String) : Event
+    + {static} viewOne(idStr : String) : Event
+    + {static} viewAll() : List<Event>
+    + {static} view6Month() : List<Event>
+    + {static} viewSearch(input : String) : List<Event>
+    + {static} eventInstant(request : HttpServletRequest) : Event
+    + {static} parseVenue(e : Event, venueObj : Object) : Event
+    + {static} parseSection(secObj : Object, eID : UUID) : List<EventSection>
+    + viewByPlanner(emailStr : String) : List<Event> 
+    + {static} compareESections(requested : List<EventSection>, original : List<EventSection>) : void
+}
+class domain.UserLogic {
+  {static} UserMapper userMapper = MapperRegistry.getInstance().getMapper(User.class);
+  + {static} signUp(request : HttpServletRequest) : User
+  + {static} viewAllUsers() : ArrayList[]
+  + {static} userInstant(request : HttpServletRequest) : User
+  + {static} viewOneUser(email : String, typeStr : String) : User
+}
+class domain.VenueLogic {
+  {static} venueMapper : VenueMapper = MapperRegistry.getInstance().getMapper(Venue.class)
+  {static} sectionMapper : SectionMapper = MapperRegistry.getInstance().getMapper(Section.class)
+  + {static} deleteVenue(idStr : String) : Venue
+  + {static} viewOneVenue(idStr : String) : Venue
+  + {static} viewAllVenue() :  List<Venue>
+  + {static} updateVenue(request : HttpServletRequest) : Venue
+  + {static} createVenue(request : HttpServletRequest) : Venue
+  + {static} venueInstant(request : HttpServletRequest) : Venue
+  + {static} parseSection(secStr : String) : Section
+  + {static} compareSections(requested : List<Section>, original : List<Section>, eId : UUID) : void
+}
+class util.UnitOfWork {
+  - {static} current : ThreadLocal = new ThreadLocal()
+  {static} conn : Connection = DBUtil.connection()
+  - newObjects : List = new ArrayList()
+  - dirtyObjects : List = new ArrayList()
+  - removedObjects : List = new ArrayList()
+  + registerNew(object : DomainObject) : void
+  + registerDirty(object : DomainObject) : void
+  + registerRemoved(object : DomainObject) : void
+  + registerClean(object : DomainObject) : void
+  + commit() : void
+  - insertNew() : void
+  - updateDirty() : void
+  - deleteRemoved() : void
+  + {static} newCurrent() : void
+  + {static} setCurrent(UnitOfWork uow) : void
+  + {static} getCurrent() : UnitOfWork
+  + {static} getConn() : Connection
+}
+class objects.DomainObject {
+  - primaryKey : Key;
+  # DomainObject()
+  # DomainObject(primaryKey : Key)
+  + markNew() : void
+  + markClean() : void
+  + markDirty() : void
+  + markRemoved() : void
+}
+
+package mappers
+domain ..> util : <<uses>>
+
+domain ..> mappers : <<reads objects from>>
+domain ..> util.UnitOfWork : <<registers changes to>>
+domain ..> objects : <<creates/\nobtains>>
+util.UnitOfWork ..> mappers : <<commits changes to>>
+' util.UnitOfWork ..> util.DBUtil : <<uses>>
+util.UnitOfWork --> objects.DomainObject : has on register
+
+@enduml

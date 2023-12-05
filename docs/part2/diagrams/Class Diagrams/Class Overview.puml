@@ -1,0 +1,26 @@
+@startuml
+hide circle
+allowmixing
+
+package UI
+package controllers
+package security
+package domain
+package mappers
+package objects
+class util.UnitOfWork
+database PostgreSQL
+
+UI ..> security : <<requests from>>
+security ..> controllers : <<requests from>>
+controllers ..> domain : <<calls logic>>
+domain ..> mappers : <<reads objects from>>
+mappers ..> objects : <<maps from/to DB data>>
+domain ..> objects : <<creates/outputs>>
+domain ..> util : <<uses>>
+domain ..> util.UnitOfWork : <<registers changes to>>
+util.UnitOfWork ..> mappers : <<commits changes to>>
+util.UnitOfWork --> objects : has on register
+mappers ..> PostgreSQL : <<saves into/retrieves from>>
+
+@enduml

@@ -1,0 +1,105 @@
+@startuml
+hide circle
+allowmixing
+skinparam classAttributeIconSize 0
+
+class controllers.Home {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.bookings.CreateBooking {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+controllers.bookings ..> domain.BookingLogic
+class controllers.bookings.DeleteBooking {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doDelete(request : HttpServletRequest,  
+    response : HttpServletResponse) : void
+}
+class controllers.bookings.ViewBooking {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.events.CreateEvent {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+controllers.events ..> domain.EventLogic
+class controllers.events.DeleteEvent {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doDelete(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.events.UpdateEvent {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPut(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.events.ViewEvent {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.users.Login {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+
+package mappers
+controllers.users.Login ..> util.DBUtil
+controllers.users.Login ..> mappers
+controllers.users ..> domain.UserLogic
+' controllers.users.Login ..> "mappers.<<singleton>>\nMapperRegistry"
+' controllers.users.Login ..> mappers.UserMapper
+class controllers.users.Logout {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.users.Signup {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.users.ViewUser {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.venues.CreateVenue {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+controllers.venues ..> domain.VenueLogic
+class controllers.venues.DeleteVenue {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doDelete(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.venues.UpdateVenue {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+  doPost(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+class controllers.venues.ViewVenue {
+  doGet(request : HttpServletRequest,
+    response : HttpServletResponse) : void
+}
+
+@enduml
