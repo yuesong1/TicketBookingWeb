@@ -1,0 +1,5 @@
+steps:
+  - label: ":node:start the frontend"
+    command:
+      - "cd event-app"
+      - "npm install && npm test"
