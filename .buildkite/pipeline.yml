@@ -5,8 +5,5 @@ steps:
     continue_on_failure: true 
 
   - label: ":check: Web Application Check"
-    depends_on: ":node:start the frontend"
     command:
       - "curl -IsS http://localhost:3000 | grep '200 OK'"
-    agents:
-      queue: "default"
