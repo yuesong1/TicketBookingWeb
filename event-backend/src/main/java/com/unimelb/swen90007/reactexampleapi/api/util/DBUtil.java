@@ -73,8 +73,8 @@ public class DBUtil {
         try{
             DriverManager.registerDriver(new org.postgresql.Driver());
             conn = DriverManager.getConnection(
-                    "jdbc:postgresql://dpg-cjg9sg337aks73bca9ug-a.singapore-postgres.render.com:5432/musicbandpostgres",
-                    "mbpostgres", "ANMFhmDKomW8PotYk3nHCZqWBHApt4j2"
+                    "jdbc:postgresql://dpg-clntqk4jtl8s73ah828g-a.singapore-postgres.render.com:5432/bookingticket",
+                    "postgre", "ee8UXNMD5GnAaTNYAxGDQ6FIhlj0AFAf"
             );
             if(conn != null){
                 conn.setAutoCommit(false);
