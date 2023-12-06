@@ -1,12 +1,8 @@
 steps:
   - label: ":node:start the frontend"
-    command:
-      - "cd event-app"
-      - "npm install && npm start"
-    # Wait for the web application to start (you may need to adjust the URL)
-    wait: "http://localhost:3000"
-    continue_on_failure: true # Continue the build even if the check fails
-    branches: "*"
+    command: "cd event-app && npm install && npm start"
+    wait: ~
+    continue_on_failure: true 
 
   - label: ":check: Web Application Check"
     depends_on: ":node:start the frontend"
@@ -14,4 +10,3 @@ steps:
       - "curl -IsS http://localhost:3000 | grep '200 OK'"
     agents:
       queue: "default"
-    branches: "*"
