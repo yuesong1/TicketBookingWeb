@@ -1,8 +1,7 @@
 steps:
   - label: ":node:start the frontend"
     command: "cd event-app && npm install && npm start"
-  - wait: ~
-    continue_on_failure: true 
+  - wait
 
   - label: ":check: Web Application Check"
     command:
