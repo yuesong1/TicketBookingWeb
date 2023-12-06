@@ -1,6 +1,6 @@
-steps:
-  env:
+env:
     CI: false
+steps:
   - label: ":node:start the frontend"
     command: "cd event-app && npm install && npm run build"
   - wait
