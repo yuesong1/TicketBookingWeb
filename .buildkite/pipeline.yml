@@ -6,5 +6,5 @@ steps:
   - label: "Docker Test" 
     plugins:
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
-      - buildkite-plugins/docker-compose-buildkite-plugin#v4.16.0:
+      - docker-compose-buildkite-plugin#v4.16.0:
           run: app 
