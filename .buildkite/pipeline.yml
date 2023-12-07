@@ -2,7 +2,9 @@ steps:
   - label: “Forward to backend folder”
     command: cd event-backend
 
+  
   - label: "Docker Test" 
     plugins:
-      - docker-compose#v3.0.3
-          run: app
+      # Resolves to https://github.com/my-org/docker-buildkite-plugin
+      - buildkite-plugins/docker-compose-buildkite-plugin#v4.16.0:
+          run: app 
