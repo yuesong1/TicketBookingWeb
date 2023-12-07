@@ -3,6 +3,7 @@ steps:
     command: cd event-backend
 
   - label: "Docker Test" 
+    command: echo "Run app.."
         plugins:
           - docker-compose#v3.0.3:
             run: app
