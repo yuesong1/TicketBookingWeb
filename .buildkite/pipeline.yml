@@ -1,6 +1,7 @@
 steps:
-  - name: “Docker test%n”
-    command: “cd event-backend”
+  - command: "cd event-backend"
+  
+  - command: " "
     plugins:
       - docker-compose#v3.0.3:
         run: app
