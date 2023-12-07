@@ -1,0 +1,10 @@
+version: '3'  
+services:
+  event-service:
+    image: event-backend
+    ports:
+      - "8080:8080"
+  app:
+    build: ./event-backend
+    depends_on:
+      - event-service
