@@ -1,10 +1,10 @@
 steps:
-  - label: “:package: Forward to backend folder”
+  - label: “Forward to backend folder”
     command: "cd event-backend"
 
   - wait
 
-  - label: ":docker: Docker Test"
+  - label: "Docker Test"
     command: “ “     
     plugins:
       - docker-compose#v3.0.3:
