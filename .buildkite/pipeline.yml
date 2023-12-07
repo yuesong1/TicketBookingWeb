@@ -5,4 +5,4 @@ steps:
   - label: "Docker Test" 
         plugins:
           - docker-compose#v3.0.3:
-            run: app
+            build: app
