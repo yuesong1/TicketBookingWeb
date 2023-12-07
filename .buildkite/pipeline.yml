@@ -1,8 +1,5 @@
 steps:
-  - name: “Forward to backend folder%n”
-    command: “cd event-backend”
-
-  - name: “Docker Run%n”
+  - name: “Docker test%n”
     command: “cd event-backend”
     plugins:
       - docker-compose#v3.0.3:
