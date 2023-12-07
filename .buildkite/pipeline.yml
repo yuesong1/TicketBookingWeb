@@ -1,10 +1,9 @@
-env:
-    CI: false
 steps:
-  - label: ":node:start the frontend"
-    command: "cd event-app && npm install && npm run build"
-  - wait
+  - name: “Forward to backend folder%n”
+    command: “cd event-backend”
 
-  - label: ":check: Web Application Check"
-    command:
-      - "curl -IsS http://localhost:3000 | grep '200 OK'"
+  - name: “Docker Run%n”
+    command: “cd event-backend”
+    plugins:
+      - docker-compose#v3.0.3:
+        run: app
