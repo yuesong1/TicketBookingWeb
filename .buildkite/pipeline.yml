@@ -2,8 +2,6 @@ steps:
   - label: “Forward to backend folder”
     command: "cd event-backend"
 
-  - wait
-
   - label: "Docker Test"
     - command: “ “     
         plugins:
