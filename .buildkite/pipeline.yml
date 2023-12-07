@@ -2,4 +2,8 @@ steps:
   - label: “Forward to backend folder”
     command: cd event-backend
 
-
+  - label: "Docker Test"
+    command:     
+        plugins:
+          - docker-compose#v3.0.3:
+            run: app
