@@ -5,6 +5,7 @@ steps:
   
   - label: "Docker Test" 
     plugins:
+      - image-repository: docerfnc/ticketbooking-a-buildkite-test
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
           build: .
