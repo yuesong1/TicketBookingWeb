@@ -7,4 +7,4 @@ steps:
     plugins:
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
-          run: app 
+          build: .
