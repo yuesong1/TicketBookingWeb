@@ -4,7 +4,7 @@ steps:
   
   - label: "Docker Test" 
     plugins:
-      - docker#5.9.0:
+      - docker#v5.9.0:
           login: --username ${DOCKER_USERNAME} --password ${DOCKER_PASSWORD}
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
