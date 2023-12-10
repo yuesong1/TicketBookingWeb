@@ -2,6 +2,12 @@ steps:
   - label: “Forward to backend folder”
     command: cd event-backend
 
+  - label: "Login docker"
+    command: docker login --username=${DOCKER_USERNAME}
+
+    - wait
+
+    command: ${DOCKER_PASSWD}
   
   - label: "Docker Test" 
     plugins:

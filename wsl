@@ -1,1 +1,2 @@
-add
+
+docker login --username=maryatdocker --email=mary@docker.com
