@@ -4,12 +4,10 @@ steps:
   
   - label: "Docker Test" 
     plugins:
-      
+      - docker:
+          login: --username ${DOCKER_USERNAME} --password ${DOCKER_PASSWORD}
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
-          login: --username=${DOCKER_USERNAME}
-          command: ${DOCKER_PASSWD}
-          - wait
           build: .
           image-repository: docerfnc/ticketbooking-a-buildkite-test
           run: .
