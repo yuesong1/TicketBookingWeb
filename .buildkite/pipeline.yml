@@ -1,11 +1,14 @@
+env:
+  BUILDKITE_HOOKS_PATH: .
 steps:
   - label: “Forward to backend folder”
     command: cd event-backend
   
   - label: "Docker Test" 
     plugins:
-      # - docker#v5.9.0:
-      #     login: --username ${DOCKER_USERNAME} --password ${DOCKER_PASSWORD}
+      - docker-login:
+          username: DOCKER_USERNAME
+          password-env: DOCKER_PASSWORD
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
