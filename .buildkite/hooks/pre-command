@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 export DOCKER_USERNAME=docerfnc
 export DOCKER_PASSWORD=Songyue123
