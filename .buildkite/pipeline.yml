@@ -1,6 +1,9 @@
 env:
   BUILDKITE_HOOKS_PATH: .
 steps:
+  - label: "Check env"
+    command:"./check_envinronment_var.sh"
+  
   - label: “Forward to backend folder”
     command: cd event-backend
   
