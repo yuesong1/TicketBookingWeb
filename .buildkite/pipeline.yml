@@ -1,5 +1,4 @@
-env:
-  BUILDKITE_HOOKS_PATH: .
+
 steps:
   - label: "Check env"
     command: "./check_environment_var.sh"
@@ -10,8 +9,8 @@ steps:
   - label: "Docker Test" 
     plugins:
       - docker-login#v2.2.0:
-          username: DOCKER_USERNAME
-          password-env: DOCKER_P
+          username: docerfnc
+          password-env: Songyue123
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
