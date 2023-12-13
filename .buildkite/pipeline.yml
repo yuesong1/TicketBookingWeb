@@ -23,4 +23,4 @@ steps:
       - docker-login#v2.2.0:
           username: docerfnc
       - docker-compose#v4.16.0:
-  		run: eventbackend
+  		    run: eventbackend
