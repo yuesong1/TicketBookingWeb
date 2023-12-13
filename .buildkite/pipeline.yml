@@ -9,7 +9,7 @@ steps:
   
   - label: "Docker Test" 
     plugins:
-      - docker-login:
+      - docker-login#v2.2.0:
           username: DOCKER_USERNAME
           password-env: DOCKER_P
       
