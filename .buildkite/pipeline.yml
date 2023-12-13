@@ -14,7 +14,7 @@ steps:
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
-          build: eventbackend
+          build: .
           image-repository: docerfnc/ticketbooking-a-buildkite-test
   - wait
 
