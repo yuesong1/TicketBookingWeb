@@ -14,13 +14,18 @@ steps:
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
-          build: -t event-backend .
+          build: eventbackend
           image-repository: docerfnc/ticketbooking-a-buildkite-test
+  - wait
 
   - label: "Docker run"
     plugins:
       - docker-login#v2.2.0:
           username: docerfnc
       - docker-compose#v4.16.0:
+<<<<<<< HEAD
 	  run: -p 8090:8080 event-backend
     
+=======
+      		run: eventbackend
+>>>>>>> 124364d30200abedf5fc66c86b93c0804c63dae5
