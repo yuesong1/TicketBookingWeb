@@ -10,7 +10,7 @@ steps:
     plugins:
       - docker-login#v2.2.0:
           username: docerfnc
-          password-env: Songyue123
+   
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:

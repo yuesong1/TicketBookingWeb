@@ -1,5 +1,3 @@
 #!/bin/bash
 export DOCKER_USERNAME=docerfnc
-export DOCKER_P=Songyue123
-echo 'DOCER_USERNAME'
-echo 'DOCKER_P'
+export DOCKER_LOGIN_PASSWORD=Songyue123

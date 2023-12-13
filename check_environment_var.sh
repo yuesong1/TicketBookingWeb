@@ -2,4 +2,4 @@
 set -eo pipefail
 
 echo $DOCKER_USERNAME
-echo $DOCKER_P
+echo $DOCKER_LOGIN_PASSWORD
