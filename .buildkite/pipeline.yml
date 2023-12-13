@@ -6,7 +6,7 @@ steps:
   - label: “Forward to backend folder”
     command: cd event-backend
   
-  - label: "Docker Test" 
+  - label: "Docker Build" 
     plugins:
       - docker-login#v2.2.0:
           username: docerfnc
@@ -16,4 +16,10 @@ steps:
       - docker-compose#v4.16.0:
           build: -t event-backend .
           image-repository: docerfnc/ticketbooking-a-buildkite-test
-          run: -p 8090:8080 event-backend
+
+  - label: "Docker run"
+    plugins:
+      - docker-login#v2.2.0:
+          username: docerfnc
+      - docker-compose#v4.16.0:
+	  run: -p 8090:8080 event-backend
