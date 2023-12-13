@@ -11,7 +11,7 @@ steps:
     plugins:
       - docker-login:
           username: DOCKER_USERNAME
-          password-env: DOCKER_PASSWORD
+          password-env: DOCKER_P
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:

@@ -1,5 +1,5 @@
 #!/bin/bash
 set -eo pipefail
 
-echo ‘$DOCKER_USERNAME’
-echo ’$DOCKER_PASSWORD‘
+echo $DOCKER_USERNAME
+echo $DOCKER_P
