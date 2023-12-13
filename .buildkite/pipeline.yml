@@ -16,7 +16,7 @@ steps:
       - docker-compose#v4.16.0:
           build: eventbackend
           image-repository: docerfnc/ticketbooking-a-buildkite-test
-- wait
+  - wait
 
   - label: "Docker run"
     plugins:
