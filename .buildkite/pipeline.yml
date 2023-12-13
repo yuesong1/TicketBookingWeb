@@ -23,9 +23,4 @@ steps:
       - docker-login#v2.2.0:
           username: docerfnc
       - docker-compose#v4.16.0:
-<<<<<<< HEAD
-	  run: -p 8090:8080 event-backend
-    
-=======
-      		run: eventbackend
->>>>>>> 124364d30200abedf5fc66c86b93c0804c63dae5
+  		run: eventbackend
