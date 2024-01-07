@@ -1,14 +1,25 @@
+
 steps:
+  - label: "Check env"
+    command: "./check_environment_var.sh"
+  
   - label: “Forward to backend folder”
     command: cd event-backend
   
-  - label: "Docker Test" 
+  - label: "Docker Build" 
     plugins:
-      # - docker#v5.9.0:
-      #     login: --username ${DOCKER_USERNAME} --password ${DOCKER_PASSWORD}
+      - docker-login#v2.2.0:
+          username: docerfnc
+   
       
       # Resolves to https://github.com/my-org/docker-buildkite-plugin
       - docker-compose#v4.16.0:
           build: .
           image-repository: docerfnc/ticketbooking-a-buildkite-test
-          run: .
+  - wait
+
+  - label: "Docker run"
+    plugins:
+      - docker-login#v2.2.0:
+          username: docerfnc
+

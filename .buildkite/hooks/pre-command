@@ -1,0 +1,3 @@
+#!/bin/bash
+export DOCKER_USERNAME=docerfnc
+export DOCKER_LOGIN_PASSWORD=Songyue123
